@@ -1,6 +1,6 @@
 # Prospect Engine Web App — Build Plan
 
-Status: pre-Phase-0. Nothing built yet. This document is the plan only, per WEBAPP_BRIEF.md's own rules.
+Status: Phases 0-2 built and running (schema, read-only app, logging + queue mode). Phase 3 below is a proposal only — nothing in this section is built yet, per WEBAPP_BRIEF.md Checkpoint 3's explicit instruction to propose before implementing.
 
 ---
 
@@ -134,3 +134,49 @@ Reply in the "1a, 2b, 3 your call" format.
 
 8. **Git.** This still isn't a git repo. Recommend `git init` now, before any webapp code lands, so each checkpoint's diff is reviewable the way the brief's "show me the migration before applying" implies.
    *(a) git init now — (b) later — (c) skip, you don't need it.*
+
+---
+
+## PHASE 3 PROPOSAL — buying windows and follow-up generation
+
+Not built. This is the proposal WEBAPP_BRIEF's Checkpoint 3 asks for before any of it gets implemented.
+
+### Reality check on the "90-day dry run"
+
+The brief's Checkpoint 3 asks for a dry run of what would have fired over the past 90 days. Checked: `rep_actions` has 15 rows, all from today's Phase 2 testing session; `signals` has 0 rows. There is no real history to dry-run against yet — Phase 2 only went live today. Proposing instead: run the generation logic once, read-only, against the database **as it stands right now**, and show what it would create tonight. That's a real test of the logic, just not a 90-day retrospective — there's nothing to retrospect over yet. A genuine 90-day dry run becomes possible once the two-week (or longer) trial has produced real activity.
+
+### 1. Buying window editing
+
+Small addition to the school detail page: an "Edit window" toggle on the existing window-inline display, revealing season / start month-day / end month-day / source (`observed` or `stated` — `assumed` is only ever the seed default, never a value a rep chooses) / an optional note. Saves via the same pattern as logging (a small POST). No new migration needed — `buying_windows` already has every column this touches.
+
+### 2. Follow-up generation algorithm
+
+**Window-anchored** (highest priority) — brief already specifies this one concretely: fires when a school is currently inside its decision window and has had no activity (any outcome) in 60+ days, or never. Proposing this fires **once per window occurrence**, not nightly for the whole ~75-day window — dedup by checking whether a window-type follow-up already exists with `created_at` inside the current window's date range, regardless of its status (open, done, or dismissed). A dismissed one doesn't get re-created three days later; a new one only appears next year's window.
+
+I'm proposing **no pre-window lead time** (i.e., it fires at window entry, not two weeks before) — "window opens soon" is something the daily priority list (Phase 4) can surface directly from `buying_windows` by ranking, without needing a `follow_ups` row to exist. Keeping follow-up generation to "the window is actually open" keeps this phase's logic simple and matches the brief's literal wording. Flagging this as a real choice, not an obvious one — if you want a "coming up" nudge before the window opens, that's a small addition here.
+
+**Signal-driven** — fires immediately on a new `signals` row (new principal, new music teacher, PTO officer change), regardless of cadence, per the brief. Dedup problem: `follow_ups` has no column linking back to the `signals` row that caused it, so there's no clean way to check "have I already generated a follow-up for this exact signal." Proposing a small schema addition: `follow_ups.source_signal_id bigint REFERENCES signals(id)`, nullable — makes the dedup check exact (`NOT EXISTS follow_ups WHERE source_signal_id = signal.id`) instead of a fuzzy text/date match. This is the one piece of this proposal that touches the schema; wanted to flag it explicitly rather than fold it in silently.
+
+**Cadence** — the brief gives the behavior (suppressed outside the window, resets only on a real connection — `spoke`, `email_replied`, `meeting_set` — not on an attempt) but not the numbers. Proposing:
+
+- **Base interval: 10 calendar days** since the last connection (or since the first attempt, if there's never been a connection) while the school is in-window.
+- **Escalation: 5 calendar days** once 2 or more non-connect outcomes (`no_answer`, `left_voicemail`, `gatekept`, `declined`) have stacked up since the last connection — this is the "raise urgency" behavior the brief asks for, expressed as a shorter interval rather than a bigger badge or number (consistent with Phase 4's "never show a growing count" rule).
+- **Dedup: skip entirely if an open (or snoozed) cadence follow-up already exists** for that school+entity. The interval only controls when the *next* one gets created after the current one is resolved — this avoids ever stacking duplicate cadence nudges for the same relationship.
+
+Reasoning on the numbers: the fall window is ~75 days (Apr 1 - Jun 15) and Phase 4 caps the daily list at 12-15 items. A tighter interval than 10 days risks a handful of unreachable schools permanently crowding out everything else on the list; much looser than 10 and a school can go most of the window without a second nudge. Open to being wrong here — this is a guess calibrated on the shape of the window, not on any real usage data yet (there isn't any).
+
+### 3. Suppression / lost schools (brief's open question 4)
+
+No new column needed. Proposing: if the most recent `rep_actions.action_type` for a school (or a specific buying_entity, once actions are entity-scoped — they already are, per Phase 2) is `lost` or `do_not_contact`, suppress all follow-up generation for that school/entity. Reversible the moment a new action gets logged against it — matches the "cheap and reversible" bar without adding a `status` column that could drift out of sync with the activity log itself.
+
+### 4. Dismissal semantics (brief's open question 3)
+
+Proposing dismissal is **per buying_entity, not per school** — consistent with Phase 2's whole redesign around multiple independent entities per school. Dismissing the PTO follow-up shouldn't silence a live booster-club signal at the same school.
+
+### 5. Questions
+
+1. **Signal linkage schema change** — add `follow_ups.source_signal_id` (nullable FK to `signals`) for clean dedup. *(a) yes, small migration — (b) find another way to dedupe without a schema change — (c) your call.*
+2. **Cadence numbers** — 10 days base / 5 days after 2+ non-connects, in-window only. *(a) use these — (b) different numbers (say what) — (c) show the dry run first, then decide.*
+3. **No pre-window lead time** for window-anchored follow-ups — that signal comes from Phase 4's ranking instead. *(a) agreed — (b) I do want a lead-time nudge here, propose one — (c) your call.*
+4. **Lost/do-not-contact suppression** via `rep_actions.action_type`, no new column. *(a) yes — (b) other.*
+5. **Dismissal scope** — per buying_entity, not per school. *(a) yes — (b) per school instead — (c) your call.*

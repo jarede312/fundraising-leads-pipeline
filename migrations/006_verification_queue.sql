@@ -10,6 +10,9 @@
 -- Tier 2: everything else that's either uncertain (low/unknown confidence) or has never
 --         been verified by any method at all, regardless of score.
 -- Tier 3: already-confident contacts, just due for a periodic re-check.
+-- Joins to whatever score_version is newest, not a hardcoded 'v1', so this view keeps
+-- working as later scoring runs (v2, v3, ...) land - from this pipeline or any other
+-- agent's.
 CREATE VIEW v_export_verification_queue AS
 SELECT
     c.id AS contact_id,
@@ -36,6 +39,7 @@ SELECT
     END AS tier
 FROM contacts c
 JOIN schools s ON s.id = c.school_id
-LEFT JOIN scores sc ON sc.school_id = s.id AND sc.score_version = 'v1'
+LEFT JOIN scores sc ON sc.school_id = s.id
+    AND sc.score_version = (SELECT score_version FROM scores ORDER BY generated_at DESC LIMIT 1)
 WHERE c.status = 'active'
 ORDER BY tier, sc.score DESC NULLS LAST;

@@ -1,4 +1,12 @@
 {% from "macros.html" import conf_badge %}
+{% if is_htmx %}
+{# Out-of-band swap: the count lives in the page header, outside #results, so a
+   filter change needs a second target or the header goes stale ("557 open schools"
+   over a table showing 18). Only emitted when this template is rendered as the htmx
+   fragment - the full-page render already has this element via school_list.html's
+   header, and two elements sharing an id would be a second bug, not a fix. #}
+<div class="page-sub" id="schools-count" hx-swap-oob="true">{{ total }} open school{{ 's' if total != 1 else '' }}</div>
+{% endif %}
 <div class="results-bar">
   <a class="work-list-btn" href="/queue?{{ build_qs(qs_state, {'pos': 0, 'page': None}) }}">&#9654; Work this list</a>
   <span class="muted small">Starts a focused, one-school-at-a-time session over these {{ total }} school{{ 's' if total != 1 else '' }}.</span>

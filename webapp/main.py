@@ -1,8 +1,11 @@
+import logging
 from datetime import date, timedelta
 from pathlib import Path
 from urllib.parse import urlencode
 
-from fastapi import Depends, FastAPI, Form, Query, Request
+import psycopg
+from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -38,11 +41,16 @@ def build_qs(state: dict, overrides: dict | None = None) -> str:
     merged = {**state, **(overrides or {})}
     params = {}
     for k, v in merged.items():
-        if v in (None, "", False):
+        # `v in (None, "", False)` looks equivalent but drops 0 as well, since
+        # 0 == False in Python - which silently deleted a "score min 0" bound from
+        # every sort, pagination and Work-this-list link on the page.
+        if v is None or v == "" or v is False:
             continue
         params[k] = "true" if v is True else v
     return urlencode(params)
 
+
+log = logging.getLogger("prospect_engine")
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
@@ -60,6 +68,78 @@ templates.env.globals["SCORE_METHODOLOGY"] = queries.SCORE_METHODOLOGY
 templates.env.filters["phone"] = format_phone
 
 PAGE_SIZE = 50
+
+
+def _error_response(request: Request, status: int, message: str) -> HTMLResponse:
+    """One error surface for both kinds of request.
+
+    htmx never swaps a non-2xx response, so before this existed a failed save was
+    completely invisible: the rep clicked Save, nothing on screen moved, and the only
+    record of the failure was a traceback in the server log. htmx requests get a small
+    fragment that app.js retargets into a banner; full navigations get a real page
+    instead of Starlette's bare "Internal Server Error" text.
+    """
+    if request.headers.get("HX-Request"):
+        return templates.TemplateResponse(
+            request, "_error_banner.html", {"message": message},
+            status_code=status, headers={"HX-Reswap": "none"},
+        )
+    return templates.TemplateResponse(
+        request, "error.html", {"status": status, "message": message}, status_code=status,
+    )
+
+
+@app.exception_handler(HTTPException)
+def http_exception_handler(request: Request, exc: HTTPException):
+    return _error_response(request, exc.status_code, exc.detail)
+
+
+@app.exception_handler(RequestValidationError)
+def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return _error_response(
+        request, 400,
+        "That request had a value this page can't use. If you edited the address bar, "
+        "try loading the page fresh.",
+    )
+
+
+@app.exception_handler(Exception)
+def unhandled_exception_handler(request: Request, exc: Exception):
+    """Database CHECK/FK violations reach here. They are genuine bugs - the endpoint
+    should have rejected the value first - so they are logged in full, but the rep gets
+    a sentence instead of a stack trace and, crucially, gets *something*."""
+    log.exception("unhandled error on %s %s", request.method, request.url.path)
+    return _error_response(
+        request, 500,
+        "Something went wrong saving that, and it wasn't saved. "
+        "The error has been logged - please try again.",
+    )
+
+# Today stays deliberately bounded (WEBAPP_PLAN.md 2: "a bounded list that's always
+# achievable beats a complete one that never is").
+PRIORITY_LIMIT = 15
+PRIORITY_LIMIT_MORE = 30
+
+
+def _opt_number(raw: str, cast):
+    """A filter bound from the query string, or None if it isn't a usable number.
+
+    Bad input is ignored rather than raised: these values arrive from a URL, and the
+    guide tells reps to bookmark and share filtered views, so a hand-edited or
+    truncated link has to degrade to 'no bound' instead of a 500. Floats are accepted
+    for the int fields ("1.5" -> 1) rather than rejected - a pasted value shouldn't
+    lose the whole filter over its decimal point."""
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+    try:
+        return cast(raw)
+    except ValueError:
+        pass
+    try:
+        return cast(float(raw))
+    except (ValueError, OverflowError):
+        return None
 
 
 def filter_params(
@@ -81,19 +161,20 @@ def filter_params(
     """
     return dict(
         q=q.strip(), state=state, segment=segment,
-        enrollment_min=int(enrollment_min) if enrollment_min.strip() else None,
-        enrollment_max=int(enrollment_max) if enrollment_max.strip() else None,
-        score_min=float(score_min) if score_min.strip() else None,
-        score_max=float(score_max) if score_max.strip() else None,
+        enrollment_min=_opt_number(enrollment_min, int),
+        enrollment_max=_opt_number(enrollment_max, int),
+        score_min=_opt_number(score_min, float),
+        score_max=_opt_number(score_max, float),
         has_pto_contact=has_pto_contact, has_verified_email=has_verified_email,
     )
 
 
-def _ensure_daily_priority_generated(conn, today: date) -> None:
-    """Self-healing regen: if nobody/nothing has generated today's follow-ups and
-    priority snapshot yet, do it now, inline. Keeps the Phase 3/4 nightly-batch design
-    (a real snapshot table, not a live view - see migrations/007_crm_layer.sql) without
-    depending on an OS-level cron/Task Scheduler entry actually existing and firing."""
+# Arbitrary constant, shared by every process that regenerates the snapshot. Advisory
+# locks are namespaced only by this number, so it just has to be unique within this DB.
+DAILY_PRIORITY_LOCK_KEY = 8_123_456_789
+
+
+def _regen_ran_today(conn, today: date) -> bool:
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -104,18 +185,53 @@ def _ensure_daily_priority_generated(conn, today: date) -> None:
             """,
             (today,),
         )
-        already_ran = cur.fetchone() is not None
-    if already_ran:
+        return cur.fetchone() is not None
+
+
+def _ensure_daily_priority_generated(conn, today: date) -> None:
+    """Self-healing regen: if nobody/nothing has generated today's follow-ups and
+    priority snapshot yet, do it now, inline. Keeps the Phase 3/4 nightly-batch design
+    (a real snapshot table, not a live view - see migrations/007_crm_layer.sql) without
+    depending on an OS-level cron/Task Scheduler entry actually existing and firing.
+
+    Serialized on a Postgres advisory lock. The check and the write are far apart in
+    wall-clock terms (generation takes ~0.5s over 557 schools), and the first load of
+    the day is exactly when a second tab, a refresh, or a second device is most likely
+    to land in that gap. Unserialized, each one deletes only the rows it can see and
+    inserts its own: three concurrent loads produced three complete copies of the
+    snapshot, three rows at rank 1, and every school listed three times on Today.
+    """
+    if _regen_ran_today(conn, today):
         return
 
     # A dedicated plain-tuple-row connection, not the webapp's dict_row `conn` -
     # phase8/phase9's generate() unpack rows positionally (`for a, b, c in rows`),
     # which silently iterates dict *keys* instead of values against a dict_row cursor.
+    # Closing it also releases the advisory lock, whatever happened in between.
     ingest_conn = ingest_db.connect()
     try:
+        with ingest_conn.cursor() as cur:
+            # Wait for whoever is generating, but never wedge the home page behind a
+            # stuck one - on timeout, fall through and render the snapshot as it
+            # stands rather than raising.
+            cur.execute("SET lock_timeout = '15s'")
+            try:
+                cur.execute("SELECT pg_advisory_lock(%s)", (DAILY_PRIORITY_LOCK_KEY,))
+            except psycopg.errors.LockNotAvailable:
+                ingest_conn.rollback()
+                log.warning("daily-priority regen: timed out waiting for the lock")
+                return
+
+        # Re-check under the lock: if we queued behind the request that did the work,
+        # its ingest_runs row is committed by now and there is nothing left to do.
+        if _regen_ran_today(ingest_conn, today):
+            return
+
         with ingest_db.ingest_run(
             ingest_conn, "manual", "Auto daily-priority regen (webapp)", "ND",
         ) as (run_id, counts):
+            reopened = phase8_follow_ups.reopen_due_snoozes(ingest_conn, today)
+            counts["in"] += reopened
             to_create = phase8_follow_ups.generate(ingest_conn, today)
             phase8_follow_ups.commit_follow_ups(ingest_conn, to_create, today, counts)
             rows = phase9_daily_priority.generate(ingest_conn, today)
@@ -129,7 +245,7 @@ def _ensure_daily_priority_generated(conn, today: date) -> None:
 def home(request: Request, show_more: bool = False, conn=Depends(get_conn)):
     today = date.today()
     _ensure_daily_priority_generated(conn, today)
-    limit = 30 if show_more else 15
+    limit = PRIORITY_LIMIT_MORE if show_more else PRIORITY_LIMIT
     rows, total = queries.get_daily_priority(conn, today, limit, 0)
     next_window = queries.get_next_window_summary(conn) if total == 0 else None
     return templates.TemplateResponse(
@@ -156,13 +272,19 @@ def school_list(
     total_pages = max(1, -(-total // PAGE_SIZE))
     qs_state = {**filters, "sort": sort, "dir": dir, "page": page}
 
+    is_htmx = bool(request.headers.get("HX-Request"))
     ctx = {
-        "request": request, "schools": rows, "total": total,
+        "schools": rows, "total": total,
         "page": page, "total_pages": total_pages, "page_size": PAGE_SIZE,
         "sort": sort, "dir": dir, "filters": filters, "qs_state": qs_state,
         "segments": queries.SEGMENTS,
+        # The header count lives outside #results, so on a filter swap it has to be
+        # updated out-of-band or it keeps reading "557 open schools" over a table
+        # showing 18. Only emitted on the htmx path - on a full render the header
+        # template already prints it, and two copies would both land on the page.
+        "is_htmx": is_htmx,
     }
-    template = "_school_table.html" if request.headers.get("HX-Request") else "school_list.html"
+    template = "_school_table.html" if is_htmx else "school_list.html"
     return templates.TemplateResponse(request, template, ctx)
 
 
@@ -170,7 +292,7 @@ def school_list(
 def school_detail(request: Request, school_id: int, conn=Depends(get_conn)):
     ctx = _contacts_ctx(conn, school_id)
     if ctx["school"] is None:
-        return HTMLResponse("School not found", status_code=404)
+        raise HTTPException(404, "No school with that id.")
     return templates.TemplateResponse(request, "school_detail.html", ctx)
 
 
@@ -214,21 +336,43 @@ def create_action(
     follow_up_date: str = Form(""),
     conn=Depends(get_conn),
 ):
+    # Everything that can be rejected is rejected before anything is written. The
+    # attempt and its follow-up are one user action and have to land together: parsing
+    # the date *after* logging the call meant a bad date left the attempt recorded with
+    # no follow-up, no visible change on screen, and a rep who logged the call twice.
+    if not queries.school_exists(conn, school_id):
+        raise HTTPException(404, "No school with that id.")
+    if channel not in queries.VALID_CHANNELS:
+        raise HTTPException(400, "Unknown contact channel.")
+    if buying_entity not in queries.BUYING_ENTITY_LABELS:
+        raise HTTPException(400, "Unknown buying entity.")
+    if outcome and outcome not in queries.OUTCOME_LABELS:
+        raise HTTPException(400, "Unknown outcome.")
+    if contact_id is not None and queries.contact_school_id(conn, contact_id) != school_id:
+        raise HTTPException(400, "That contact doesn't belong to this school.")
+
+    due = None
+    if needs_follow_up:
+        if follow_up_date.strip():
+            try:
+                due = date.fromisoformat(follow_up_date.strip())
+            except ValueError:
+                raise HTTPException(400, "Follow-up date must be a real date (YYYY-MM-DD).")
+        else:
+            due = date.today() + timedelta(days=queries.MANUAL_FOLLOW_UP_DEFAULT_DAYS)
+
     org_id, user_id = queries.get_default_org_user(conn)
     queries.log_action(
         conn, org_id, user_id, school_id, contact_id,
         buying_entity, channel, outcome or None, notes.strip() or None,
     )
-    if needs_follow_up:
-        due = (
-            date.fromisoformat(follow_up_date) if follow_up_date.strip()
-            else date.today() + timedelta(days=queries.MANUAL_FOLLOW_UP_DEFAULT_DAYS)
-        )
+    if due is not None:
         queries.set_manual_follow_up(
             conn, school_id, buying_entity, due,
             f"Follow-up requested when logging a {channel} attempt"
             + (f': "{notes.strip()}"' if notes.strip() else ""),
         )
+    conn.commit()
     groups = queries.get_activity_grouped(conn, school_id)
     return templates.TemplateResponse(
         request, "_activity_timeline.html",
@@ -244,7 +388,10 @@ def patch_action_outcome(
     outcome: str = Form(...),
     conn=Depends(get_conn),
 ):
-    queries.update_action_outcome(conn, action_id, outcome)
+    if outcome not in queries.OUTCOME_LABELS:
+        raise HTTPException(400, "Unknown outcome.")
+    if not queries.update_action_outcome(conn, action_id, school_id, outcome):
+        raise HTTPException(404, "That activity entry no longer exists.")
     groups = queries.get_activity_grouped(conn, school_id)
     return templates.TemplateResponse(
         request, "_activity_timeline.html",
@@ -260,7 +407,8 @@ def patch_action_notes(
     notes: str = Form(""),
     conn=Depends(get_conn),
 ):
-    queries.update_action_notes(conn, action_id, notes.strip() or None)
+    if not queries.update_action_notes(conn, action_id, school_id, notes.strip() or None):
+        raise HTTPException(404, "That activity entry no longer exists.")
     groups = queries.get_activity_grouped(conn, school_id)
     return templates.TemplateResponse(
         request, "_activity_timeline.html",
@@ -280,6 +428,34 @@ def _contacts_ctx(conn, school_id: int) -> dict:
     return {"school": school, "contacts_by_role": contacts_by_role}
 
 
+@app.post("/schools/{school_id}/contacts", response_class=HTMLResponse)
+def add_contact(
+    request: Request,
+    school_id: int,
+    role: str = Form(...),
+    first_name: str = Form(""),
+    last_name: str = Form(""),
+    role_detail: str = Form(""),
+    email: str = Form(""),
+    phone: str = Form(""),
+    conn=Depends(get_conn),
+):
+    if not queries.school_exists(conn, school_id):
+        raise HTTPException(404, "No school with that id.")
+    if role not in queries.ROLE_LABELS:
+        raise HTTPException(400, "Unknown role.")
+    if not first_name.strip() and not last_name.strip():
+        raise HTTPException(400, "Enter at least a first or last name.")
+    queries.create_contact(
+        conn, school_id, role,
+        first_name.strip() or None, last_name.strip() or None,
+        role_detail.strip() or None, email.strip() or None, phone.strip() or None,
+    )
+    return templates.TemplateResponse(
+        request, "_contacts_section.html", _contacts_ctx(conn, school_id),
+    )
+
+
 @app.patch("/contacts/{contact_id}", response_class=HTMLResponse)
 def patch_contact_info(
     request: Request,
@@ -289,7 +465,10 @@ def patch_contact_info(
     phone: str = Form(""),
     conn=Depends(get_conn),
 ):
-    queries.update_contact_info(conn, contact_id, email.strip() or None, phone.strip() or None)
+    if not queries.update_contact_info(
+        conn, contact_id, school_id, email.strip() or None, phone.strip() or None
+    ):
+        raise HTTPException(404, "That contact no longer exists at this school.")
     return templates.TemplateResponse(
         request, "_contacts_section.html", _contacts_ctx(conn, school_id),
     )
@@ -308,12 +487,35 @@ def update_buying_window(
     notes: str = Form(""),
     conn=Depends(get_conn),
 ):
+    # The form's min/max bound month and day independently, so the browser happily
+    # accepts Feb 30 - and so did the CHECK constraints, which validate each column on
+    # its own. That combination wrote a date that doesn't exist, which then raised
+    # every time the school's page tried to render it: one save, and that school 500'd
+    # permanently. Validate the pair, here, before it can be stored.
+    for label, month, day in (
+        ("Opens", decision_start_month, decision_start_day),
+        ("Closes", decision_end_month, decision_end_day),
+    ):
+        if not queries.valid_month_day(month, day):
+            raise HTTPException(
+                400,
+                f"{label}: {month:02d}/{day:02d} isn't a real date. "
+                "(February 29 isn't accepted either - a window that recurs every year "
+                "can't start on a day three years in four don't have.)",
+            )
+    if season not in ("fall", "spring"):
+        raise HTTPException(400, "Season must be fall or spring.")
+    if source not in ("assumed", "observed", "stated"):
+        raise HTTPException(400, "Source must be assumed, observed or stated.")
+
     school_id = queries.update_buying_window(
         conn, window_id, season,
         decision_start_month, decision_start_day,
         decision_end_month, decision_end_day,
         source, notes.strip() or None,
     )
+    if school_id is None:
+        raise HTTPException(404, "That decision window no longer exists.")
     school = {"buying_windows": queries.get_buying_windows(conn, school_id)}
     return templates.TemplateResponse(
         request, "_window_section.html", {"school": school},
@@ -346,13 +548,23 @@ def dismiss_priority_item(
     school_id: int = Form(...),
     buying_entity: str = Form(...),
     duration: str = Form(...),
+    show_more: bool = Form(False),
     conn=Depends(get_conn),
 ):
+    if duration not in DISMISS_DURATIONS:
+        raise HTTPException(400, "Unknown dismiss option.")
+    if buying_entity not in queries.BUYING_ENTITY_LABELS:
+        raise HTTPException(400, "Unknown buying entity.")
+    if not queries.school_exists(conn, school_id):
+        raise HTTPException(404, "No school with that id.")
+
     today = date.today()
     snoozed_until = (
         today + timedelta(days=DISMISS_DURATIONS[duration])
         if duration in ("1w", "2w") else None
     )
+    # Dismissal and the log entry explaining it commit together - a follow-up that
+    # vanished with no matching activity row is a hole in the history the rep relies on.
     queries.dismiss_follow_up(conn, school_id, buying_entity, snoozed_until, today)
 
     org_id, user_id = queries.get_default_org_user(conn)
@@ -363,10 +575,14 @@ def dismiss_priority_item(
         conn, org_id, user_id, school_id, None, buying_entity,
         None, None, notes, action_type=DISMISS_ACTION_TYPE[duration],
     )
+    conn.commit()
 
-    rows, total = queries.get_daily_priority(conn, today, 15, 0)
+    # Re-render at whatever length the rep is actually looking at. Hardcoding 15 here
+    # collapsed an expanded list back down on every dismissal and re-offered "Show
+    # more" - the list shrank as a *result* of working it.
+    rows, total = queries.get_daily_priority(conn, today, PRIORITY_LIMIT_MORE if show_more else PRIORITY_LIMIT, 0)
     next_window = queries.get_next_window_summary(conn) if total == 0 else None
     return templates.TemplateResponse(
         request, "_priority_list.html",
-        {"rows": rows, "total": total, "show_more": False, "next_window": next_window, "today": today},
+        {"rows": rows, "total": total, "show_more": show_more, "next_window": next_window, "today": today},
     )

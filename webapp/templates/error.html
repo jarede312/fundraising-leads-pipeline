@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ status }} — Prospect Engine{% endblock %}
+{% block content %}
+<div class="page">
+  <header class="page-header">
+    <h1>{{ 'Not found' if status == 404 else 'Something went wrong' }}</h1>
+  </header>
+  <section class="card">
+    <p>{{ message }}</p>
+    <p class="muted small"><a href="/">&larr; Back to Today</a></p>
+  </section>
+</div>
+{% endblock %}

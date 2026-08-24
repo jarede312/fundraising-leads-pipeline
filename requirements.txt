@@ -1,8 +1,14 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-jinja2==3.1.2
+# Pinned to what's actually installed and verified running against this codebase
+# (checked 2026-08-23). The previous pins (fastapi==0.104.1 among them) resolved to a
+# starlette <0.29 that doesn't have the request-first TemplateResponse(request, name,
+# ctx) signature every handler in webapp/main.py uses - `pip install -r
+# requirements.txt` produced an app that 500'd on every single route. If you bump one
+# of these, bump together and smoke-test all of /, /schools, /schools/{id}, /queue.
+fastapi==0.141.1
+uvicorn[standard]==0.52.0
+jinja2==3.1.6
 psycopg[binary]==3.3.4
-httpx==0.25.2
-anthropic==0.25.0
-openpyxl==3.1.2
-python-multipart==0.0.6
+httpx==0.28.1
+anthropic==0.120.2
+openpyxl==3.1.5
+python-multipart==0.0.32

@@ -42,16 +42,25 @@ def main():
     conn = db.connect()
     cur = conn.cursor()
 
+    # Latest score_version on file, not a hardcoded 'v1' - another agent has already
+    # shipped a v2 (added contactability, fixed CEP/Provision-2 FRL handling) since this
+    # export was first written, and the export should always reflect the current best
+    # scoring, not whichever version existed when this file was last edited.
+    cur.execute("SELECT score_version FROM scores ORDER BY generated_at DESC LIMIT 1")
+    row = cur.fetchone()
+    latest_version = row[0] if row else None
+
     cur.execute(
         """
         SELECT s.id, s.name, s.city, d.name, s.segment, s.enrollment, s.school_type,
                sc.score, sc.rationale
         FROM schools s
         LEFT JOIN districts d ON d.id = s.district_id
-        LEFT JOIN scores sc ON sc.school_id = s.id AND sc.score_version = 'v1'
+        LEFT JOIN scores sc ON sc.school_id = s.id AND sc.score_version = %s
         WHERE s.status = 'open'
         ORDER BY sc.score DESC NULLS LAST
-        """
+        """,
+        (latest_version,),
     )
     school_rows = cur.fetchall()
 

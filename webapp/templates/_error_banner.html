@@ -1,0 +1,8 @@
+{# htmx fragment for a failed write. app.js listens for htmx:responseError and
+   swaps this into a fixed banner (any target works since it's swapped OOB-style
+   via app.js, not a normal hx-target). #}
+<div class="error-banner" role="alert">
+  <span class="error-banner-icon">&#9888;</span>
+  <span>{{ message }}</span>
+  <button type="button" class="error-banner-dismiss" aria-label="Dismiss">&times;</button>
+</div>

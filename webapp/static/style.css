@@ -345,3 +345,34 @@ code {
 .guide-glossary dt { font-weight: 700; margin-top: 14px; }
 .guide-glossary dt:first-child { margin-top: 0; }
 .guide-glossary dd { margin: 3px 0 0; color: var(--ink-muted); line-height: 1.5; max-width: 700px; }
+
+/* ---- error banner (webapp/static/app.js, templates/_error_banner.html) ----
+   Fixed to the top of the viewport so a failed write is visible regardless of
+   which part of the page the triggering control lived in - a save inside a
+   contact card and a save inside the Decision Window section have no shared
+   container to swap an inline message into. */
+#error-banner-host {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; flex-direction: column; align-items: center;
+}
+.error-banner {
+  margin-top: 10px; display: flex; align-items: center; gap: 10px;
+  background: var(--red-bg); color: var(--red); border: 1px solid var(--red);
+  border-radius: 6px; padding: 10px 14px; font-size: 13.5px; max-width: 640px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.12);
+}
+.error-banner-icon { font-size: 15px; }
+.error-banner-dismiss {
+  background: none; border: none; color: inherit; font-size: 18px; line-height: 1;
+  cursor: pointer; padding: 0 0 0 6px; margin-left: auto;
+}
+
+/* ---- "+ Add a contact" (webapp/templates/_contacts_section.html) ----
+   Reuses .inline-add / .inline-add-form's look, but as a block-level section
+   footer rather than an inline field appendage, and wrapped since it carries a
+   role select plus four fields instead of one. */
+.add-contact { display: block; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border); }
+.add-contact-form { display: flex; flex-wrap: wrap; gap: 6px; }
+.add-contact-form select {
+  padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12.5px;
+}

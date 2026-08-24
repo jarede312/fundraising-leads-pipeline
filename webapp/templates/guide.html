@@ -50,8 +50,8 @@
 
     <h3>Contacts</h3>
     <p>Every known person at the school, grouped by role, plus a standing <strong>General / Front Office</strong> entry for when you're calling the main line rather than a specific person. Two people at different sources sometimes get scraped as separate records - when that happens for the same name, they're merged into one card but every distinct email/phone found for them is kept, since sources occasionally disagree and the disagreement itself is worth seeing.</p>
-    <p>If a contact is missing an email or phone, a <strong>+ Add email</strong> / <strong>+ Add phone</strong> link appears - use it to fill in what you find by hand. Known emails and phone numbers are clickable (<code>mailto:</code> / <code>tel:</code>).</p>
-    <p>Each contact card has its own logging controls: optionally type a note, then click what happened - Called, Left message, Emailed, Video call, or Mailed. Which <strong>buying entity</strong> (PTO, Band Boosters, School Admin, etc.) the attempt counts toward is inferred automatically from that person's role - a Band Booster contact logs to Band Boosters, a Principal logs to School Admin - so there's nothing to pick. A school can have several live relationships at once, and they stay tracked separately. The General / Front Office card is the exception: since it isn't tied to a specific person's role, it keeps an entity picker so you can say who the call was actually about.</p>
+    <p>If a contact is missing an email or phone, a <strong>+ Add email</strong> / <strong>+ Add phone</strong> link appears - use it to fill in what you find by hand. Known emails and phone numbers are clickable (<code>mailto:</code> / <code>tel:</code>). A school with nobody on file yet - or a PTO/booster officer you learned about by phone rather than found in any source - can be added directly with <strong>+ Add a contact</strong> at the bottom of the section.</p>
+    <p>Each contact card has its own logging controls: optionally type a note, then click what happened - Called, Left message, Emailed, Video call, or Mailed. Which <strong>buying entity</strong> (PTO, Band Boosters, School Admin, etc.) the attempt counts toward is inferred automatically from that person's role - a Band Booster contact logs to Band Boosters, a Principal logs to School Admin - so there's nothing to pick. A school can have several live relationships at once, and they stay tracked separately. The General / Front Office card is the exception: since it isn't tied to a specific person's role, it keeps an entity picker so you can say who the call was actually about. It's also the card the keyboard shortcuts below act on - see Keyboard shortcuts.</p>
 
     <h3>Decision Window</h3>
     <p>The date range each buying entity typically makes its purchasing decision. Click "edit" on a window to correct the dates, season, or source (stated by the school vs. observed from past behavior) if what's on file is wrong.</p>
@@ -73,12 +73,12 @@
       <tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>Move selection down / up</td></tr>
       <tr><td><kbd>Enter</kbd></td><td>Open the selected school</td></tr>
       <tr><th colspan="2">A school's page (and Queue mode)</th></tr>
-      <tr><td><kbd>c</kbd></td><td>Log: Called</td></tr>
-      <tr><td><kbd>l</kbd></td><td>Log: Left message</td></tr>
-      <tr><td><kbd>e</kbd></td><td>Log: Emailed</td></tr>
-      <tr><td><kbd>v</kbd></td><td>Log: Video call</td></tr>
-      <tr><td><kbd>m</kbd></td><td>Log: Mailed</td></tr>
-      <tr><td><kbd>n</kbd></td><td>Focus the notes field</td></tr>
+      <tr><td><kbd>c</kbd></td><td>Log: Called, against General / Front Office</td></tr>
+      <tr><td><kbd>l</kbd></td><td>Log: Left message, against General / Front Office</td></tr>
+      <tr><td><kbd>e</kbd></td><td>Log: Emailed, against General / Front Office</td></tr>
+      <tr><td><kbd>v</kbd></td><td>Log: Video call, against General / Front Office</td></tr>
+      <tr><td><kbd>m</kbd></td><td>Log: Mailed, against General / Front Office</td></tr>
+      <tr><td><kbd>n</kbd></td><td>Focus the General / Front Office notes field</td></tr>
       <tr><td><kbd>Esc</kbd></td><td>Back to the list / exit queue</td></tr>
       <tr><th colspan="2">Queue mode only</th></tr>
       <tr><td><kbd>Enter</kbd></td><td>Next school in the queue</td></tr>

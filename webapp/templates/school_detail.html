@@ -6,7 +6,16 @@
 
   <header class="detail-header">
     <div>
-      <h1>{{ school.name|title }}</h1>
+      <h1>
+        {{ school.name|title }}
+        {% if school.status != 'open' %}
+        {# Closed/consolidated/unknown-status schools stay reachable by direct URL
+           (a bookmark, a link from an old queue session) even though every list and
+           the queue filter them out - without this, the page gave no indication of
+           why a school a rep is looking at never shows up when they search for it. #}
+        <span class="tag tag-warn">{{ school.status|capitalize }}</span>
+        {% endif %}
+      </h1>
       <div class="page-sub">
         {% if school.district_name %}{{ school.district_name|title }}
         {% elif school.school_type == 'private' %}Private school, no district

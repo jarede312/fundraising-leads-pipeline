@@ -16,7 +16,10 @@
         {% endif %}
       </div>
     </div>
-    {{ log_buttons(school.id, None, 'office', default_entity=school.default_buying_entity, compact=True) }}
+    {# The office card is the always-present, entity-flexible standing entry -
+       keyboard shortcuts (c/l/e/v/m) log against this card specifically, so its
+       buttons are the ones that show the key hint in their tooltip. See app.js. #}
+    {{ log_buttons(school.id, None, 'office', default_entity=school.default_buying_entity, compact=True, show_shortcut_hint=True) }}
   </div>
 
   {% if school.contacts %}
@@ -83,4 +86,26 @@
   {% else %}
     <p class="empty-hint">No named contacts on file for this school yet.</p>
   {% endif %}
+
+  {# The 25 open schools with zero contacts, and the PTO/booster roles that barely
+     exist in any source dataset (WEBAPP_PLAN.md 1.6), had no way into Contacts except
+     by editing an existing row. This is that path: the office told a rep who runs the
+     PTO, or a newsletter had a name on it - now there's somewhere to put it. #}
+  <details class="inline-add add-contact">
+    <summary class="add-link">+ Add a contact</summary>
+    <form class="inline-add-form add-contact-form"
+          hx-post="/schools/{{ school.id }}/contacts"
+          hx-target="#contacts-section" hx-swap="outerHTML">
+      <select name="role" required>
+        {% for role in ROLE_PRIORITY %}
+        <option value="{{ role }}">{{ ROLE_LABELS.get(role, role) }}</option>
+        {% endfor %}
+      </select>
+      <input type="text" name="first_name" placeholder="First name" autofocus>
+      <input type="text" name="last_name" placeholder="Last name">
+      <input type="email" name="email" placeholder="email@school.org (optional)">
+      <input type="tel" name="phone" placeholder="(701) 555-0100 (optional)">
+      <button type="submit">Add</button>
+    </form>
+  </details>
 </section>

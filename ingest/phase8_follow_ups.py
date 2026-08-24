@@ -27,6 +27,13 @@ Entities considered per school: every buying_entity ever used in rep_actions for
 school, plus 'school_admin' always as a baseline candidate (the office is always a
 valid target even before any entity-specific contact has been logged).
 
+Snoozed rows: reopen_due_snoozes() flips a 'snoozed' row back to 'open' once its
+snoozed_until date has passed. This has to run before generate() on every call - a
+snoozed row is one of the "already exists" rows generate()'s cadence branch checks
+to avoid double-creating a follow-up (status IN ('open', 'snoozed')), so a snooze
+that's never reopened doesn't just fail to reappear on Today, it permanently blocks
+a fresh cadence follow-up for that (school, entity) from ever being created again.
+
 Run (dry run, default - prints what would be created, writes nothing):
     python -m ingest.phase8_follow_ups
 Run for real:
@@ -48,6 +55,22 @@ DEFAULT_SIGNAL_ENTITY = "school_admin"
 CADENCE_BASE_DAYS = 10
 CADENCE_ESCALATED_DAYS = 5
 CADENCE_ESCALATE_AFTER = 2
+
+
+def reopen_due_snoozes(conn, today: date) -> int:
+    """Snoozed follow-ups whose snooze has expired become 'open' again, so they are
+    visible to generate()'s dedup check and, once open, to phase9's Today query. Call
+    this before generate() on every run - see module docstring."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE follow_ups
+            SET status = 'open', snoozed_until = NULL
+            WHERE status = 'snoozed' AND snoozed_until <= %s
+            """,
+            (today,),
+        )
+        return cur.rowcount
 
 
 def generate(conn, today: date):
@@ -227,6 +250,11 @@ def main():
     commit = "--commit" in sys.argv
     conn = db.connect()
     today = date.today()
+
+    if commit:
+        reopened = reopen_due_snoozes(conn, today)
+        conn.commit()
+        print(f"Reopened {reopened} snoozed follow-up(s) past their snooze date.")
 
     to_create = generate(conn, today)
     print_report(to_create, commit)

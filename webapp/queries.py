@@ -5,6 +5,8 @@ hardcoded version/date - the same staleness bug fixed in migration 008 for the
 verification-queue view would otherwise resurface here the next time either table
 grows a new version.
 """
+import calendar
+import re
 from datetime import date
 
 ROLE_LABELS = {
@@ -157,13 +159,51 @@ def get_last_entity_by_contact(conn, school_id: int) -> dict:
         return {r["contact_id"]: r["buying_entity"] for r in cur.fetchall()}
 
 
+_EMAIL_CONF_RANK = {"verified": 0, "high": 1, "medium": 2, "low": 3, "unknown": 4, "invalid": 5}
+
+
+def _norm_email(v):
+    return (v or "").strip().lower() or None
+
+
+def _norm_phone(v):
+    return re.sub(r"\D", "", v or "") or None
+
+
+def dedupe_contact_methods(rows: list) -> list:
+    """Two source rows for the same person that carry the *same* email and phone are
+    not a disagreement worth showing - they're one fact scraped twice, and rendering
+    them side by side with contradictory confidence badges ("high" next to "medium" on
+    a byte-identical address) undermines the badge everywhere else. Keep best-confidence
+    first, then drop any row whose email and phone are both already covered.
+
+    A row that adds a genuinely new address or number is always kept, so a real
+    source disagreement still surfaces - that's the case the merge exists for.
+    """
+    ordered = sorted(rows, key=lambda r: _EMAIL_CONF_RANK.get(r.get("email_confidence"), 9))
+    kept, seen_emails, seen_phones = [], set(), set()
+    for r in ordered:
+        email, phone = _norm_email(r.get("email")), _norm_phone(r.get("phone"))
+        adds_email = email is not None and email not in seen_emails
+        adds_phone = phone is not None and phone not in seen_phones
+        if kept and not adds_email and not adds_phone:
+            continue
+        # A contact with no email and no phone at all still needs one row rendered:
+        # that empty row is what carries the "+ Add email / + Add phone" affordance.
+        kept.append(r)
+        seen_emails.add(email)
+        seen_phones.add(phone)
+    return kept
+
+
 def merge_duplicate_contacts(contacts: list, last_entity_by_contact: dict | None = None) -> list:
     """The same person routinely gets written twice - once from the state directory,
     once from the site crawl - sometimes with different confidence, sometimes even a
     different role (a genuine promotion, or just two sources disagreeing). Merge by
-    (school, name) so they show as one person, but keep every distinct contact method
+    (school, name) so they show as one person, keeping every *distinct* contact method
     intact rather than picking a winner: the disagreement itself is information a rep
-    should be able to see, not something the UI should silently resolve for them.
+    should be able to see. Byte-identical repeats are collapsed first - see
+    dedupe_contact_methods.
     """
     last_entity_by_contact = last_entity_by_contact or {}
     groups, order = {}, []
@@ -196,7 +236,7 @@ def merge_duplicate_contacts(contacts: list, last_entity_by_contact: dict | None
             "role": primary["role"],
             "role_detail": primary["role_detail"],
             "other_roles": other_roles,
-            "methods": rows,
+            "methods": dedupe_contact_methods(rows),
             "default_entity": last_used or buying_entity_for_contact(primary["role"], primary["role_detail"]),
         })
     return merged
@@ -212,13 +252,31 @@ SORT_COLUMNS = {
 }
 
 
+def valid_month_day(month: int, day: int) -> bool:
+    """Is (month, day) a real calendar date in a non-leap year? Feb 29 is deliberately
+    rejected: a window that recurs every year can't anchor on a day that doesn't exist
+    in three years out of four."""
+    if not (1 <= month <= 12 and 1 <= day <= 31):
+        return False
+    return day <= calendar.monthrange(2001, month)[1]
+
+
+def recurring_date(year: int, month: int, day: int) -> date:
+    """A recurring (month, day) resolved against a specific year, clamped to that
+    month's real length. Callers should reject impossible input up front (see
+    valid_month_day), but rows written before that check existed still have to render:
+    a stored Feb 30 must degrade to Feb 28, never raise. A bare date() here is what
+    turned one bad window row into a permanent 500 on that school's page."""
+    return date(year, month, min(day, calendar.monthrange(year, month)[1]))
+
+
 def window_status(start_month, start_day, end_month, end_day, today: date):
     """(status, human label) for a recurring month/day decision window, evaluated
     against `today`. status is one of 'in_window' / 'upcoming' / 'passed'."""
-    start_this_year = date(today.year, start_month, start_day)
-    end_this_year = date(today.year, end_month, end_day)
+    start_this_year = recurring_date(today.year, start_month, start_day)
+    end_this_year = recurring_date(today.year, end_month, end_day)
     if end_this_year < start_this_year:
-        end_this_year = date(today.year + 1, end_month, end_day)
+        end_this_year = recurring_date(today.year + 1, end_month, end_day)
 
     if start_this_year <= today <= end_this_year:
         days_left = (end_this_year - today).days
@@ -231,7 +289,7 @@ def window_status(start_month, start_day, end_month, end_day, today: date):
             f"Decision window opens in {days_out} day{'s' if days_out != 1 else ''}"
         return "upcoming", label
 
-    next_start = date(today.year + 1, start_month, start_day)
+    next_start = recurring_date(today.year + 1, start_month, start_day)
     days_out = (next_start - today).days
     weeks = days_out // 7
     return "passed", f"Window closed; opens again in {weeks} weeks"
@@ -546,6 +604,25 @@ def get_default_buying_entity(conn, school_id: int, contacts: list) -> str:
     return "school_admin" if contacts else "unknown"
 
 
+VALID_CHANNELS = {"email", "phone", "video", "mail", "other"}  # rep_actions_channel_check
+
+
+def school_exists(conn, school_id: int) -> bool:
+    with conn.cursor() as cur:
+        cur.execute("SELECT 1 FROM schools WHERE id = %s", (school_id,))
+        return cur.fetchone() is not None
+
+
+def contact_school_id(conn, contact_id: int):
+    """The school a contact belongs to, or None if no such contact exists - used to
+    reject a contact_id that's missing, mistyped, or (worst case) copied from a
+    different school's page before it can reach the FK and become a 500."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT school_id FROM contacts WHERE id = %s", (contact_id,))
+        row = cur.fetchone()
+        return row["school_id"] if row else None
+
+
 def get_default_org_user(conn):
     """Single-tenant placeholder: the one seeded org/user (WEBAPP_PLAN.md Checkpoint 0,
     Q3) until this tool has real auth."""
@@ -559,6 +636,10 @@ def get_default_org_user(conn):
 
 def log_action(conn, org_id, user_id, school_id, contact_id, buying_entity, channel, outcome, notes,
                action_type="contacted"):
+    """Does not commit. Both callers pair this with a second write (a follow-up, a
+    dismissal) and must land both or neither - committing here is what let a rejected
+    follow-up date leave the attempt logged with no follow-up attached, so the rep saw
+    no change on screen and logged the same call twice."""
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -571,13 +652,20 @@ def log_action(conn, org_id, user_id, school_id, contact_id, buying_entity, chan
                  action_type=action_type, channel=channel, outcome=outcome,
                  buying_entity=buying_entity, notes=notes),
         )
-    conn.commit()
 
 
-def update_action_outcome(conn, action_id: int, outcome: str):
+def update_action_outcome(conn, action_id: int, school_id: int, outcome: str) -> int:
+    """school_id is part of the WHERE, not just something the caller passes for
+    re-rendering: without it an action id from one school could be edited while the
+    response rendered a different school's timeline."""
     with conn.cursor() as cur:
-        cur.execute("UPDATE rep_actions SET outcome = %s WHERE id = %s", (outcome, action_id))
+        cur.execute(
+            "UPDATE rep_actions SET outcome = %s WHERE id = %s AND school_id = %s",
+            (outcome, action_id, school_id),
+        )
+        n = cur.rowcount
     conn.commit()
+    return n
 
 
 def get_daily_priority(conn, today: date, limit: int, offset: int):
@@ -632,6 +720,9 @@ def dismiss_follow_up(conn, school_id: int, buying_entity: str, snoozed_until, t
 
     Also removes the row from *today's* already-generated daily_priority snapshot -
     dismissing should disappear it now, not just stop it from reappearing tomorrow.
+
+    Does not commit: the caller pairs this with the rep_action that records *why* it
+    was dismissed, and a dismissal with no matching log entry is a lie about history.
     """
     with conn.cursor() as cur:
         if snoozed_until:
@@ -657,14 +748,17 @@ def dismiss_follow_up(conn, school_id: int, buying_entity: str, snoozed_until, t
             """,
             (school_id, buying_entity, today),
         )
-    conn.commit()
 
 
-def update_contact_info(conn, contact_id: int, email: str | None, phone: str | None):
+def update_contact_info(conn, contact_id: int, school_id: int, email: str | None,
+                        phone: str | None) -> int:
     """Fills in a missing email/phone that a rep discovered by hand - the schema
     already anticipated this via email_source='provided' and
-    last_verified_method='manual' (see migrations/001_init.sql), it just had no UI."""
-    sets, params = [], {"id": contact_id}
+    last_verified_method='manual' (see migrations/001_init.sql), it just had no UI.
+
+    Scoped to school_id for the same reason the action patchers are: the id in the URL
+    and the school being re-rendered have to refer to the same row."""
+    sets, params = [], {"id": contact_id, "school_id": school_id}
     if email:
         sets.append("email = %(email)s, email_source = 'provided', email_confidence = 'high'")
         params["email"] = email
@@ -672,11 +766,47 @@ def update_contact_info(conn, contact_id: int, email: str | None, phone: str | N
         sets.append("phone = %(phone)s")
         params["phone"] = phone
     if not sets:
-        return
+        return 0
     sets.append("last_verified_at = now(), last_verified_method = 'manual'")
     with conn.cursor() as cur:
-        cur.execute(f"UPDATE contacts SET {', '.join(sets)} WHERE id = %(id)s", params)
+        cur.execute(
+            f"UPDATE contacts SET {', '.join(sets)} "
+            "WHERE id = %(id)s AND school_id = %(school_id)s",
+            params,
+        )
+        n = cur.rowcount
     conn.commit()
+    return n
+
+
+def create_contact(conn, school_id: int, role: str, first_name: str, last_name: str,
+                   role_detail: str | None, email: str | None, phone: str | None) -> int:
+    """A rep adding a person they found by hand - the office told them who runs the PTO,
+    or they read a name off a newsletter. 25 open schools have no contacts at all, and
+    the PTO/booster roles the whole buying-entity model is built around exist in almost
+    no public dataset (WEBAPP_PLAN.md 1.6), so hand-entry is the only path those rows
+    will ever have. Written as email_source='provided' / 'manual' so it is visibly a
+    human-supplied fact, not something the crawler found."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO contacts (school_id, role, role_detail, first_name, last_name,
+                                   email, email_source, email_confidence, phone,
+                                   last_verified_at, last_verified_method)
+            VALUES (%(school_id)s, %(role)s, %(role_detail)s, %(first_name)s, %(last_name)s,
+                    %(email)s, %(email_source)s, %(email_confidence)s, %(phone)s,
+                    now(), 'manual')
+            RETURNING id
+            """,
+            dict(school_id=school_id, role=role, role_detail=role_detail,
+                 first_name=first_name, last_name=last_name, email=email,
+                 email_source="provided" if email else "unknown",
+                 email_confidence="high" if email else "unknown",
+                 phone=phone),
+        )
+        new_id = cur.fetchone()["id"]
+    conn.commit()
+    return new_id
 
 
 MANUAL_FOLLOW_UP_DEFAULT_DAYS = 10  # same interval as the automated cadence baseline
@@ -686,7 +816,9 @@ def set_manual_follow_up(conn, school_id: int, buying_entity: str, due_date, rea
     """A rep flagging 'needs follow-up' while logging an attempt. Reuses whatever open/
     snoozed follow-up already exists for this (school, entity) rather than creating a
     second one - same one-open-item-per-relationship rule the automated generator
-    (ingest/phase8_follow_ups.py) already follows."""
+    (ingest/phase8_follow_ups.py) already follows.
+
+    Does not commit: paired with the rep_action it was requested from."""
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -707,13 +839,17 @@ def set_manual_follow_up(conn, school_id: int, buying_entity: str, due_date, rea
                 """,
                 dict(school_id=school_id, buying_entity=buying_entity, due_date=due_date, reason_text=reason_text),
             )
-    conn.commit()
 
 
-def update_action_notes(conn, action_id: int, notes: str | None):
+def update_action_notes(conn, action_id: int, school_id: int, notes: str | None) -> int:
     with conn.cursor() as cur:
-        cur.execute("UPDATE rep_actions SET notes = %s WHERE id = %s", (notes, action_id))
+        cur.execute(
+            "UPDATE rep_actions SET notes = %s WHERE id = %s AND school_id = %s",
+            (notes, action_id, school_id),
+        )
+        n = cur.rowcount
     conn.commit()
+    return n
 
 
 def update_buying_window(conn, window_id: int, season, start_month, start_day,
@@ -732,4 +868,4 @@ def update_buying_window(conn, window_id: int, season, start_month, start_day,
         )
         row = cur.fetchone()
     conn.commit()
-    return row["school_id"] if row else None
+    return row["school_id"] if row else None   # None = no such window; caller 404s

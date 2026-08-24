@@ -4,7 +4,7 @@
 <div class="page">
   <header class="page-header">
     <h1>Schools</h1>
-    <div class="page-sub">{{ total }} open school{{ 's' if total != 1 else '' }}</div>
+    <div class="page-sub" id="schools-count">{{ total }} open school{{ 's' if total != 1 else '' }}</div>
   </header>
 
   <form id="filters" class="filters" hx-get="/schools" hx-target="#results" hx-push-url="true" hx-trigger="change, submit, search">

@@ -28,7 +28,7 @@
    card's section heading - Principal, Music Teacher, etc.) already implies the buying
    entity, so a second selector on every contact card was redundant. The entity still
    gets submitted, just as a fixed hidden value instead of something to choose. #}
-{% macro log_buttons(school_id, contact_id, key_prefix, default_entity='unknown', compact=False, show_entity_picker=True) %}
+{% macro log_buttons(school_id, contact_id, key_prefix, default_entity='unknown', compact=False, show_entity_picker=True, show_shortcut_hint=False) %}
 <div class="log-buttons {{ 'compact' if compact else 'primary-log' }}">
   <div class="log-toprow">
     {% if show_entity_picker %}
@@ -57,7 +57,7 @@
       hx-vals='{"channel": "{{ channel }}"{% if outcome %}, "outcome": "{{ outcome }}"{% endif %}{% if contact_id %}, "contact_id": {{ contact_id }}{% endif %}}'
       hx-target="#activity-timeline" hx-swap="innerHTML"
       hx-indicator="this"
-      title="{{ label }}{% if not compact %} ({{ key }}){% endif %}">
+      title="{{ label }}{% if show_shortcut_hint %} ({{ key }}){% endif %}">
       <span class="btn-label">{{ label }}</span>
       <span class="btn-check">&#10003;</span>
     </button>

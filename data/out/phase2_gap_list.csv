@@ -1,0 +1,178 @@
+sheet,county,lea,school_code,name,person,reason
+Elementary Principal,02,412,5022,Valley City Christian School,Lori Deal,no_school_at_site
+Elementary Principal,03,029,9219,Warwick Public School,Kayla Rusten,ambiguous_site
+Elementary Principal,03,900,2903,Tate Topa Tribal School,Carissa Johnson,no_school_at_site
+Elementary Principal,08,409,8118,St Anne Elem School,Jessica Pathroff,no_school_at_site
+Elementary Principal,08,409,8186,St Marys Elem School,Valerie Kuntz,no_school_at_site
+Elementary Principal,08,425,3851,University of Mary Butler Center for Early Learning,Jennifer Barry,no_school_at_site
+Elementary Principal,08,900,8830,Theodore Jamerson Elem School,Amy DeWitt,no_school_at_site
+Elementary Principal,09,017,1354,Central Cass Public School,Lyndsy Lynch,ambiguous_site
+Elementary Principal,09,401,5984,Nativity Elem School,Jill Koch,no_school_at_site
+Elementary Principal,09,405,6208,Oak Grove Lutheran Elem School,Josh Kading,no_school_at_site
+Elementary Principal,09,432,1381,Bello Mondo Elem School,Jason Brandt,no_school_at_site
+Elementary Principal,09,433,3710,Full Circle Academy,Britney Bachmeier,no_school_at_site
+Elementary Principal,09,434,3715,St Monica's Montessori,Jason Kotrba,no_school_at_site
+Elementary Principal,09,435,3719,Capstone Classical Academy,Shannon Archer,no_school_at_site
+Elementary Principal,09,801,1867,ND Center for Distance Education,Emily Schaefer,no_school_at_site
+Elementary Principal,17,401,1034,Badlands Learning Center,Jeff Bertelsen,no_school_at_site
+Elementary Principal,39,900,9175,Circle of Nations School,Michael Herrick,no_school_at_site
+Elementary Principal,40,409,8120,Ojibwa Indian School,Cory Keplin,no_school_at_site
+Elementary Principal,40,410,8119,St Ann's Catholic School,Cynthia Gillis,no_school_at_site
+Elementary Principal,40,900,1970,Dunseith Day Elem School,Candace Peltier,no_school_at_site
+Elementary Principal,43,900,2902,Standing Rock Comm Elem School,Victoria Eagle,no_school_at_site
+Elementary Principal,45,410,8196,Trinity Elem West School,JoLyn Tessier,no_school_at_site
+Elementary Principal,45,410,8197,Trinity Central,Joshua Kralicek,no_school_at_site
+Elementary Principal,45,410,8214,Trinity Elem East School,JoLyn Tessier,no_school_at_site
+Elementary Principal,45,423,8215,Northern Lights Montessori Academy,Rachel Sisson,no_school_at_site
+Elementary Principal,47,410,7791,Hillcrest SDA School,Evelyn Ricketts,no_school_at_site
+Elementary Principal,53,007,3371,Williston Middle School Central Campus,Audra Zimmerman,ambiguous_site
+Secondary Principal,02,002,8955,Valley City High School Alternative High School,Travis Peterson,no_school_at_site
+Secondary Principal,09,401,7826,Shanley High-Sacred Heart Middle School,Kyle Metzger,no_school_at_site
+Secondary Principal,09,435,3719,Capstone Classical Academy,Jonathan McGuire,no_school_at_site
+Secondary Principal,09,801,1867,ND Center for Distance Education,Kirstin Girard,no_school_at_site
+Secondary Principal,17,401,1034,Badlands Learning Center,Jeff Bertelsen,no_school_at_site
+Secondary Principal,18,001,1291,Grand Forks Virtual High School,Catherine Gillach,no_school_at_site
+Secondary Principal,31,001,6037,MA ADOO ZA GIDZ Alternative High School,Nancy Reimer,no_school_at_site
+Secondary Principal,36,001,1827,Devils Lake Alternative High School,Christa Brodina,no_school_at_site
+Secondary Principal,40,007,8568,Turtle Mountain Community Alternative School,Bradley LaRocque,no_school_at_site
+Secondary Principal,43,900,2905,Standing Rock Comm Grant High School,Annette Beyer,no_school_at_site
+Secondary Principal,45,410,1842,Trinity Junior High and High School,Christian Smith,no_school_at_site
+Secondary Principal,47,001,4569,Blue Jay Academy,Darby Heinert,no_school_at_site
+Secondary Principal,51,401,3205,Dakota Memorial Stability Academy for Transitioning Students 7 – 12 Virtual School,Tina DeGree,no_school_at_site
+Jr-Middle Principal,03,900,2903,Tate Topa Tribal School,Byron Engberg,no_school_at_site
+Jr-Middle Principal,08,409,0009,St Mary's Academy,Michael Bichler,no_school_at_site
+Jr-Middle Principal,09,401,7826,Shanley High-Sacred Heart Middle School,Leon Knodel,no_school_at_site
+Jr-Middle Principal,09,435,3719,Capstone Classical Academy,Jonathan McGuire,no_school_at_site
+Jr-Middle Principal,17,003,0851,Beach K-12 Virtual Academy,Taryn Sveet,ambiguous_site
+Jr-Middle Principal,39,900,9175,Circle of Nations School,Michael Herrick,no_school_at_site
+Jr-Middle Principal,43,003,8037,Solen Junior High School,Levi Kalsow,no_school_at_site
+Jr-Middle Principal,48,010,1277,North Star Public School,Nancy Reiser,ambiguous_site
+Assistant Principals,08,508,,Bismarck Career Academy,BRIAN BEEHLER,no_school_code_on_row
+Assistant Principals,09,097,6121,Northern Cass Public School,SHALLYN FONTANA,ambiguous_site
+Assistant Principals,09,401,7826,Shanley High-Sacred Heart Middle School,KYLE METZGER,no_school_at_site
+Assistant Principals,30,039,2854,Flasher Public School,JAMIE KRENZ,ambiguous_site
+Assistant Principals,40,409,8120,Ojibwa Indian School,ANGELIQUE BENNETT-GRIFFIN,no_school_at_site
+Assistant Principals,40,900,1970,Dunseith Day Elem School,GERALDINE PELTIER,no_school_at_site
+Assistant Principals,45,034,7433,Richardton-Taylor Public School,JORDYN MASON,ambiguous_site
+Assistant Principals,51,016,7717,Sawyer Elem School,RYAN STOCKIE,ambiguous_site
+Assistant Principals,51,161,7108,North Shore Plaza Public School,STEPHANIE HOCHHALTER,ambiguous_site
+Assistant Principals,53,007,3371,Williston Middle School Central Campus,LAUREN STONE,ambiguous_site
+Assistant Principals,53,007,3371,Williston Middle School Central Campus,SARA FAULKNER,ambiguous_site
+Assistant Principals,53,007,3371,Williston Middle School Central Campus,SARAH HEISE,ambiguous_site
+Assistant Principals,53,007,3371,Williston Middle School Central Campus,TYLER HESER,ambiguous_site
+Teachers:Music,01,013,3599,Hettinger Public School,MORGAN EHLERS,ambiguous_site
+Teachers:Music,02,002,8954,Valley City Jr-Sr High School,THEODORA DIMMER,ambiguous_site
+Teachers:Music,03,009,902,Maddock Public School,ANDREW WICKENHEISER,no_school_at_site
+Teachers:Music,06,001,1043,Bowman Co Public School,CHARMAINE MARTIAN,ambiguous_site
+Teachers:Music,06,001,1043,Bowman Co Public School,JOAN RYNE GIL,ambiguous_site
+Teachers:Music,06,033,7785,Scranton Public School,JENNIFER CONLON,ambiguous_site
+Teachers:Music,07,036,5262,Burke Central Public School,ANGELO ARGOSINO,ambiguous_site
+Teachers:Music,08,001,970,Bismarck High School,BRIAN SAYLOR,no_school_at_site
+Teachers:Music,08,001,970,Bismarck High School,COURTNEY ZANDER,no_school_at_site
+Teachers:Music,08,001,970,Bismarck High School,NEIL TAFELMEYER,no_school_at_site
+Teachers:Music,08,001,970,Bismarck High School,SHANA KLEE,no_school_at_site
+Teachers:Music,08,039,486,Apple Creek School,JULIANNE HATHAWAY,no_school_at_site
+Teachers:Music,08,409,8118,St Anne Elem School,SARAH JENSEN,no_school_at_site
+Teachers:Music,08,409,8186,St Marys Elem School,JESSICA STAVN,no_school_at_site
+Teachers:Music,09,001,713,Ben Franklin Middle School,ANDREW ROOB,no_school_at_site
+Teachers:Music,09,001,713,Ben Franklin Middle School,GREGORY CALROW,no_school_at_site
+Teachers:Music,09,001,713,Ben Franklin Middle School,JAMES LARSON,no_school_at_site
+Teachers:Music,09,001,713,Ben Franklin Middle School,JENNIE DAHL,no_school_at_site
+Teachers:Music,09,001,713,Ben Franklin Middle School,KIRSTIN CARLSON,no_school_at_site
+Teachers:Music,09,001,713,Ben Franklin Middle School,MARK AAMOLD,no_school_at_site
+Teachers:Music,09,001,898,Bennett Elem School,ELIZABETH FIEDLER,no_school_at_site
+Teachers:Music,09,001,898,Bennett Elem School,KAITLYN NEWENHOUSE,no_school_at_site
+Teachers:Music,09,004,1148,Maple Valley Public School,ROCHELLE JIMENEZ,ambiguous_site
+Teachers:Music,09,006,545,Aurora Elem School,VALERIE RAY,no_school_at_site
+Teachers:Music,09,017,1354,Central Cass Public School,ADAM MADRIGAL,ambiguous_site
+Teachers:Music,09,017,1354,Central Cass Public School,BRANDON NOFFZE,ambiguous_site
+Teachers:Music,09,017,1354,Central Cass Public School,CASSIE AKER,ambiguous_site
+Teachers:Music,09,097,6121,Northern Cass Public School,ISABELLE HAUGEN,ambiguous_site
+Teachers:Music,09,097,6121,Northern Cass Public School,JEREMY YOUNG,ambiguous_site
+Teachers:Music,09,097,6121,Northern Cass Public School,SARAH REICHEL,ambiguous_site
+Teachers:Music,09,401,5984,Nativity Elem School,ALISON LAYBOURN,no_school_at_site
+Teachers:Music,09,401,7826,Shanley High-Sacred Heart Middle School,EMILY JOHNSON,no_school_at_site
+Teachers:Music,09,405,6208,Oak Grove Lutheran Elem School,EMILY WITTKOP,no_school_at_site
+Teachers:Music,09,434,3715,St Monica's Montessori,MELISSA HORKY,no_school_at_site
+Teachers:Music,10,019,5895,Munich Public School,MIROSLAV PAVLIC,ambiguous_site
+Teachers:Music,11,040,2333,Ellendale Public School,CHARLENE BLONDO,ambiguous_site
+Teachers:Music,14,002,5971,New Rockford-Sheyenne Public School,HEATHER KLOCKE,ambiguous_site
+Teachers:Music,15,015,8248,Strasburg Public School,NICOLE VANDER VORST,ambiguous_site
+Teachers:Music,15,036,5288,Linton Public School,MICHELLE SCHUMACHER,ambiguous_site
+Teachers:Music,18,001,896,Ben Franklin Elem School,KATIE HILLESTAD,no_school_at_site
+Teachers:Music,18,001,5983,Nathan Twining Elem-Middle School,KELLY KING,ambiguous_site
+Teachers:Music,18,001,5983,Nathan Twining Elem-Middle School,MAKAYLA SCHERRER,ambiguous_site
+Teachers:Music,18,001,5983,Nathan Twining Elem-Middle School,MARJORIE MYROLD,ambiguous_site
+Teachers:Music,18,061,8416,Thompson Public School,HEATHER GUST,ambiguous_site
+Teachers:Music,18,061,8416,Thompson Public School,JUSTIN UHLIR,ambiguous_site
+Teachers:Music,18,128,5707,Midway Public School,DAVID HYSJULIEN,ambiguous_site
+Teachers:Music,18,129,6134,Northwood Public School,MEAGAN MONREAL,ambiguous_site
+Teachers:Music,18,129,6134,Northwood Public School,OLIVIA SCHLOTMAN,ambiguous_site
+Teachers:Music,21,009,6026,New England Public School,ANTON KREBS,ambiguous_site
+Teachers:Music,22,001,8232,Kidder County Public School,CRYSTAL DEVORE,ambiguous_site
+Teachers:Music,22,001,8232,Kidder County Public School,NICHOLAS BOECHLER,ambiguous_site
+Teachers:Music,23,007,5072,Kulm Public School,KATRINA WEIGEL,ambiguous_site
+Teachers:Music,23,008,5145,LaMoure Public School,KALLIE LEHR,ambiguous_site
+Teachers:Music,23,008,5145,LaMoure Public School,TRICIA LEBAHN,ambiguous_site
+Teachers:Music,25,001,9003,Velva Public School,ARIEL OSTER,ambiguous_site
+Teachers:Music,25,001,9003,Velva Public School,ASHLEY MOGARD,ambiguous_site
+Teachers:Music,25,014,389,Anamoose Elem School,JAN STEVE LACSINA,no_school_at_site
+Teachers:Music,25,060,3253,TGU Granville Public School,MARY WAHL,ambiguous_site
+Teachers:Music,26,009,539,Ashley Public School,TRUDY WOLF,no_school_at_site
+Teachers:Music,27,002,315,Alexander Public School,LAURALYN BELDEN,no_school_at_site
+Teachers:Music,28,001,9451,Wilton Public School,CORNELIA BUECHELE,ambiguous_site
+Teachers:Music,28,001,9451,Wilton Public School,ELIZABETH HAUGEN,ambiguous_site
+Teachers:Music,28,008,8806,Underwood Public School,RANDY HALL,ambiguous_site
+Teachers:Music,28,050,5519,Max Public School,DANIEL STARKS,ambiguous_site
+Teachers:Music,28,072,8562,Turtle Lake-Mercer Public School,KAILEE KLEIN,ambiguous_site
+Teachers:Music,29,027,926,Beulah Middle School,TYLER WOLF,no_school_at_site
+Teachers:Music,29,027,928,Beulah Elem School,JADYNN FLOWERS,no_school_at_site
+Teachers:Music,30,013,3537,Hebron Public School,LAURIE DAHLEN,ambiguous_site
+Teachers:Music,30,039,2854,Flasher Public School,KIERRA ANDERSON,ambiguous_site
+Teachers:Music,30,048,3165,Glen Ullin Public School,NINO DELLOMAS,ambiguous_site
+Teachers:Music,33,001,1350,Center-Stanton Public School,LACEY HANSON,ambiguous_site
+Teachers:Music,34,019,1928,Drayton Public School,KATHERINE GIANNONATTI,ambiguous_site
+Teachers:Music,34,100,6982,North Border-Pembina Public School,ANITA MATHISON,ambiguous_site
+Teachers:Music,34,100,9186,North Border-Walhalla Public School,LOUIE CALVILLO,ambiguous_site
+Teachers:Music,37,024,2387,Enderlin Area Public School,ERIC BERGSTEDT,ambiguous_site
+Teachers:Music,37,024,2387,Enderlin Area Public School,STEPHANIE HOY,ambiguous_site
+Teachers:Music,38,001,5778,MLS-Mohall Public School,BARBARA NELSON-SCHACH,ambiguous_site
+Teachers:Music,38,026,3169,Glenburn Public School,KYANNE DERR,ambiguous_site
+Teachers:Music,38,026,3169,Glenburn Public School,MELLISSA YOUNG,ambiguous_site
+Teachers:Music,39,008,3432,Hankinson Public School,ALYSON JEZUSKO,ambiguous_site
+Teachers:Music,39,008,3432,Hankinson Public School,WENDY FRISKOP,ambiguous_site
+Teachers:Music,39,028,5260,Lidgerwood Public School,KENNETH LINDSTROM,ambiguous_site
+Teachers:Music,39,042,9627,Wyndmere Public School,RUSSELL GERHARDT,ambiguous_site
+Teachers:Music,40,004,5055,Mt Pleasant Public School,KATELYN PIGEON,ambiguous_site
+Teachers:Music,41,006,7709,Sargent Central Public School,DAVID PETERSON,ambiguous_site
+Teachers:Music,41,006,7709,Sargent Central Public School,KAIA MAHRER,ambiguous_site
+Teachers:Music,43,900,2905,Standing Rock Comm Grant High School,EDWIN EDPALINA,no_school_at_site
+Teachers:Music,45,009,8060,South Heart Public School,JANA SCHWEIGERT,ambiguous_site
+Teachers:Music,45,009,8060,South Heart Public School,JERICA RIDL,ambiguous_site
+Teachers:Music,45,013,884,Belfield Public School,RACHELLE KLEIN,no_school_at_site
+Teachers:Music,45,034,7433,Richardton-Taylor Public School,BARBARA BEMIS,ambiguous_site
+Teachers:Music,45,410,1842,Trinity Junior High and High School,SANDRA TIBOR,no_school_at_site
+Teachers:Music,45,410,8214,Trinity Elem East School,CARISSA BAUSTIAN,no_school_at_site
+Teachers:Music,45,410,8214,Trinity Elem East School,HEATHER COTE,no_school_at_site
+Teachers:Music,46,019,2827,Finley-Sharon Public School,KAYDON KENFIELD,ambiguous_site
+Teachers:Music,47,003,5657,Medina Public School,ROCHELLE BOSCHE,ambiguous_site
+Teachers:Music,47,014,5794,Montpelier Public School,KRISTIN KIETZMAN,ambiguous_site
+Teachers:Music,47,019,4892,Kensal Public School,THOMAS REEVES,ambiguous_site
+Teachers:Music,48,010,1277,North Star Public School,ANDRIA JUAREZ,ambiguous_site
+Teachers:Music,49,007,3504,Hatton Eielson Public School,THONETTA PETERICK,ambiguous_site
+Teachers:Music,50,005,2891,Fordville-Lankin Public School,ALLISON BINNALL,ambiguous_site
+Teachers:Music,50,008,9208,Park River Area Public School,KRISTI SEIM,ambiguous_site
+Teachers:Music,50,008,9208,Park River Area Public School,ZACHARY FISCHER,ambiguous_site
+Teachers:Music,51,001,869,Bel Air Elem School,TERRI BERENTSON,no_school_at_site
+Teachers:Music,51,041,8266,Surrey Public School,MEGAN KLEBE,ambiguous_site
+Teachers:Music,51,070,8068,South Prairie Public School,BENJAMIN EDER,ambiguous_site
+Teachers:Music,51,161,916,Berthold Public School,DAWNA HELFRICH,no_school_at_site
+Teachers:Music,53,002,7352,Ray Public School,MARY ROLOFF,ambiguous_site
+Teachers:Music,53,002,7352,Ray Public School,TRENT HUNSKOR,ambiguous_site
+Teachers:Music,53,006,2270,Eight Mile Public School,JEREMIAH JOHN GONZAGA,ambiguous_site
+Teachers:Music,53,007,3371,Williston Middle School Central Campus,BRIDGET STEPAN,ambiguous_site
+Teachers:Music,53,007,3371,Williston Middle School Central Campus,CHAD ASKIM,ambiguous_site
+Teachers:Music,53,007,3371,Williston Middle School Central Campus,DOMINIQUE LLOYD,ambiguous_site
+Teachers:Music,53,007,3371,Williston Middle School Central Campus,EMILY WESTPHAL,ambiguous_site
+Teachers:Music,53,007,3371,Williston Middle School Central Campus,RUSSELL JOHNSON,ambiguous_site
+Teachers:Music,53,099,3281,Grenora Public School,MARK MILLER,ambiguous_site

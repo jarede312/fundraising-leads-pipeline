@@ -1,0 +1,186 @@
+url,url_type,label,reason,detail
+http://www.bhs.bismarckschools.org,school,BISMARCK HIGH SCHOOL,http_522,
+http://www.chs.bismarckschools.org,school,CENTURY HIGH SCHOOL,http_522,
+http://www.bismarckschools.org/about-us/staff-directory,school,DOROTHY MOSES ELEMENTARY SCHOOL,http_404,
+http://www.bismarckschools.org/about-us/administration,school,DOROTHY MOSES ELEMENTARY SCHOOL,http_404,
+http://www.bismarckschools.org/moses,school,DOROTHY MOSES ELEMENTARY SCHOOL,no_staff_content_found,3 candidate page(s) checked
+http://www.bismarckschools.org/highlandacres,school,HIGHLAND ACRES ELEMENTARY SCHOOL,http_404,
+http://www.horizon.bismarckschools.org,school,HORIZON MIDDLE SCHOOL,http_522,
+http://www.myhre.bismarckschools.org,school,JEANNETTE MYHRE ELEMENTARY SCHOOL,http_522,
+http://www.bismarckschools.org/about-us/staff-directory,school,PIONEER ELEMENTARY SCHOOL,fetch_error:ReadTimeout,
+http://www.bismarckschools.org/library/library-staff,school,PIONEER ELEMENTARY SCHOOL,http_404,
+http://www.bismarckschools.org/pioneer,school,PIONEER ELEMENTARY SCHOOL,no_staff_content_found,3 candidate page(s) checked
+http://www.murphy.bismarckschools.org,school,RITA MURPHY ELEMENTARY SCHOOL,http_522,
+http://www.roosevelt.bismarckschools.org,school,ROOSEVELT ELEMENTARY SCHOOL,http_522,
+http://www.simle.bismarckschools.org,school,SIMLE MIDDLE SCHOOL,http_522,
+http://bismarckschools.sharepoint.com/sites/Will-Moore_SecureBPS,school,WILL-MOORE ELEMENTARY SCHOOL,http_403,
+http://www.bismarckschools.org/about-schs/administration,school,SOUTH CENTRAL ALTERNATIVE HIGH SCHOOL,http_404,
+http://www.bismarckschools.org/contact-us,school,SOUTH CENTRAL ALTERNATIVE HIGH SCHOOL,http_404,
+http://www.prairierose.bismarckschools.org,school,PRAIRIE ROSE ELEMENTARY SCHOOL,http_522,
+http://www.bismarckschools.org/about-us/staff-directory,school,LINCOLN ELEMENTARY SCHOOL,http_404,
+http://www.bismarckschools.org/about-us/administration,school,LINCOLN ELEMENTARY SCHOOL,http_404,
+http://www.bismarckschools.org/lincoln,school,LINCOLN ELEMENTARY SCHOOL,no_staff_content_found,3 candidate page(s) checked
+http://www.bismarckschools.org/Page/849,school,BISMARCK MIDDLE VIRTUAL ACADEMY,http_404,
+http://www.bismarckschools.org/about-us/staff-directory,school,SILVER RANCH ELEMENTARY SCHOOL,http_404,
+http://www.bismarckschools.org/about-us/administration,school,SILVER RANCH ELEMENTARY SCHOOL,http_404,
+http://www.bismarckschools.org/silverranch,school,SILVER RANCH ELEMENTARY SCHOOL,no_staff_content_found,3 candidate page(s) checked
+http://www.naughtonschoolnd.com,school,NAUGHTON ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.linton.k12.nd.us,school,LINTON HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.cavalierschool.org,school,CAVALIER ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://cavalierschool.org,school,RED RIVER VALLEY HIGH VIRTUAL ACADEMY,no_staff_content_found,1 candidate page(s) checked
+http://www.kindred.k12.nd.us/,school,KINDRED MIDDLE SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.new-england.k12.nd.us,school,NEW ENGLAND PUBLIC VIRTUAL ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.richland44.com,school,RICHLAND JUNIOR-SENIOR HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.dickinson.k12.nd.us,school,P S BERG ELEMENTARY SCHOOL,fetch_error:ConnectError,
+http://www.dhs.dickinson.k12.nd.us/roughrider-virtual-academy/,school,ROUGHRIDER HIGH VIRTUAL ACADEMY,fetch_error:ConnectError,
+http://sites.google.com/dpschools.org/k-5academy/home,school,ROUGHRIDER ELEMENTARY VIRTUAL ACADEMY,no_staff_content_found,1 candidate page(s) checked
+http://www.tioga.k12.nd.us,school,TIOGA HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.mayportcg.com,school,MAY-PORT CG HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.midkotaschools.k12.nd.us/,school,MIDKOTA HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.northerncassschool.org,school,NORTHERN CASS HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://gcs.k12.nd.us,school,ELGIN-NEW LEIPZIG HIGH SCHOOL,fetch_error:ConnectError,
+http://www.mott.k12.nd.us/,school,MOTT-REGENT HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.tgu.k12.nd.us/,school,TGU VIRTUAL HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.richardton-taylor.k12.nd.us,school,RICHARDTON-TAYLOR ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.fessenden-bowdon.org,school,FESSENDEN-BOWDON HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.center-stanton.k12.nd.us,school,CENTER-STANTON HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.carrington.k12.nd.us,school,CARRINGTON HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.northborder.k12.nd.us,school,NORTH BORDER-WALHALLA HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.fordville-lankin.k12.nd.us,school,FORDVILLE-LANKIN HIGH SCHOOL,fetch_error:ConnectError,
+http://www.lewisandclark.k12.nd.us,school,LEWIS AND CLARK VIRTUAL HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.newrockford-sheyenne.k12.nd.us/,school,NEW ROCKFORD-SHEYENNE HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.barnescountynorth.k12.nd.us,school,BARNES COUNTY NORTH HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.kiddercounty.k12.nd.us/,school,KIDDER COUNTY HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.northstar.k12.nd.us/,school,NORTH STAR HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.newsalem.k12.nd.us,school,PRAIRIE VIEW ELEMENTARY SCHOOL,fetch_error:ConnectError,
+http://www.valley-edinburgk12.com/,school,VALLEY-EDINBURG ELEMENTARY SCHOOL-HOOPLE,no_staff_content_found,1 candidate page(s) checked
+http://hagan.willistonschools.org/o/hes,school,HAGAN ELEMENTARY SCHOOL,no_staff_content_found,2 candidate page(s) checked
+http://mcvay.willistonschools.org/o/mes,school,MCVAY ELEMENTARY SCHOOL,no_staff_content_found,2 candidate page(s) checked
+http://www.willistonschools.org/o/garden-valley,school,GARDEN VALLEY ELEMENTARY SCHOOL,no_staff_content_found,2 candidate page(s) checked
+http://www.willistonschools.org/o/missouri-ridge,school,MISSOURI RIDGE ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.gospoilers.org/schools/grafton-high-school,school,GRAFTON HIGH SCHOOL,http_404,
+http://www.gospoilers.org/schools/central-middle-school,school,GRAFTON JUNIOR HIGH SCHOOL,http_404,
+http://www.anamoose-drake.k12.nd.us,school,ANAMOOSE ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.applecreekschool.org/staff,school,APPLE CREEK ELEMENTARY SCHOOL,http_404,
+http://www.applecreekschool.org,school,APPLE CREEK ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.belcourt.k12.nd.us/apps/staff,school,TINY TURTLES PRESCHOOL,extract_exception,"1 validation error for ExtractionResult
+  Invalid JSON: EOF while parsing a string at line 1 column 7986 [type=json_invalid, input_value='{""contacts"":[{""first_nam...rst_name"":""David"",""last', input_typ"
+http://www.belcourt.k12.nd.us,school,TINY TURTLES PRESCHOOL,no_staff_content_found,2 candidate page(s) checked
+http://bowbells.k12.nd.us,school,BOWBELLS HIGH SCHOOL,fetch_error:ConnectError,
+http://www.bowman.k12.nd.us/,school,BOWMAN CO PRESCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.burkecentral.k12.nd.us,school,BURKE CENTRAL HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.centralvalley.k12.nd.us,school,CENTRAL VALLEY HIGH SCHOOL,fetch_error:ConnectError,
+http://www.dlschools.org/en-US/pages/5f285ea5-fa3d-41df-a4f2-4a6085420d84,school,SWEETWATER ELEMENTARY SCHOOL,extract_exception,"1 validation error for ExtractionResult
+  Invalid JSON: EOF while parsing a string at line 1 column 13432 [type=json_invalid, input_value='{""contacts"":[{""first_nam...role"":""other"",""role_det', input_ty"
+http://www.dlschools.org,school,SWEETWATER ELEMENTARY SCHOOL,no_staff_content_found,2 candidate page(s) checked
+http://www.dps19.com,school,DRAYTON HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.fairmount.k12.nd.us,school,FAIRMOUNT HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.fargo.k12.nd.us/about-us/2-hour-late-start,school,DISCOVERY MIDDLE SCHOOL,http_404,
+http://www.fargo.k12.nd.us/discovery,school,DISCOVERY MIDDLE SCHOOL,no_staff_content_found,3 candidate page(s) checked
+http://www.fargo.k12.nd.us,school,CENTENNIAL ELEMENTARY SCHOOL,no_staff_content_found,3 candidate page(s) checked
+http://www.fargo.k12.nd.us/south,school,SOUTH HIGH SCHOOL,no_staff_content_found,3 candidate page(s) checked
+http://www.fargo.k12.nd.us/davies,school,FARGO DAVIES HIGH SCHOOL,no_staff_content_found,3 candidate page(s) checked
+http://www.fargo.k12.nd.us/edclapp,school,ED CLAPP ELEMENTARY SCHOOL,no_staff_content_found,3 candidate page(s) checked
+http://www.fargo.k12.nd.us/eagles,school,EAGLES ELEMENTARY SCHOOL,no_staff_content_found,3 candidate page(s) checked
+http://sda.fargo.k12.nd.us/about-us/staff-directory,school,SELF-DIRECTED ACADEMY,http_404,
+http://sda.fargo.k12.nd.us/employment/staff-recognition-program,school,SELF-DIRECTED ACADEMY,http_404,
+http://sda.fargo.k12.nd.us/programs/self-directed-academy/about-us/meet-the-sda-staff,school,SELF-DIRECTED ACADEMY,http_404,
+http://sda.fargo.k12.nd.us/,school,SELF-DIRECTED ACADEMY,no_staff_content_found,3 candidate page(s) checked
+http://www.finleysharonschool.com,school,FINLEY-SHARON ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.flasher.k12.nd.us,school,FLASHER HIGH SCHOOL,no_staff_content_found,3 candidate page(s) checked
+http://www.fourwinds.k12.nd.us,school,FOUR WINDS COMMUNITY PK SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.fort-yates.k12.nd.us,school,FORT YATES PK SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.glen-ullin.k12.nd.us,school,GLEN ULLIN HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.glenburn.k12.nd.us,school,GLENBURN HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.gfschools.org/phoenix,school,PHOENIX ELEMENTARY SCHOOL,http_404,
+http://www.gfschools.org/benfranklin,school,BEN FRANKLIN ELEMENTARY SCHOOL,http_404,
+http://www.gfschools.org/gfc,school,CENTRAL HIGH SCHOOL,http_404,
+http://www.gfschools.org/lakeagassiz,school,LAKE AGASSIZ ELEMENTARY SCHOOL,http_404,
+http://www.gfschools.org/lewisandclark,school,LEWIS AND CLARK ELEMENTARY SCHOOL,http_404,
+http://www.gfschools.org/Domain/651,school,NATHAN TWINING MIDDLE SCHOOL,http_404,
+http://www.gfschools.org/redriver,school,RED RIVER HIGH SCHOOL,http_404,
+http://www.gfschools.org/viking,school,VIKING ELEMENTARY SCHOOL,http_404,
+http://www.gfschools.org/wilder,school,WILDER ELEMENTARY SCHOOL,http_404,
+http://www.gfschools.org/winship,school,WINSHIP ELEMENTARY SCHOOL,http_404,
+http://www.grenorapublicschool.org,school,GRENORA HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.hankinson.k12.nd.us,school,HANKINSON HIGH SCHOOL,http_403,
+http://www.harvey.k12.nd.us,school,HARVEY HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.hattonk12.com,school,HATTON EIELSON HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.hmb.k12.nd.us,school,HAZELTON-MOFFIT-BRADDOCK ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.kenmare.k12.nd.us,school,KENMARE ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.killdeer.k12.nd.us/,school,KILLDEER HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.kulmschool.com,school,KULM HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.lakota.k12.nd.us/,school,LAKOTA ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://lakota-nd.schoolloop.com/,school,LAKOTA HIGH SCHOOL,http_403,
+http://www.langdon.k12.nd.us,school,LANGDON AREA HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.larimorek12.org,school,LARIMORE HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.leeds.k12.nd.us/,school,LEEDS HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.lidgerwoodk12.com/,school,LIDGERWOOD HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.lisbonpublicschools.com/,school,LISBON MIDDLE SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://bca.mandan.k12.nd.us/,school,BRAVE CENTER ACADEMY,fetch_error:ConnectError,
+http://manningelementaryschool.blogspot.com/?m=1,school,MANNING ELEMENTARY SCHOOL,http_404,
+http://www.manvel.k12.nd.us,school,MANVEL ELEMENTARY SCHOOL,no_staff_content_found,3 candidate page(s) checked
+http://marmarthschool12.com/home/,school,MARMARTH ELEMENTARY SCHOOL,fetch_error:ConnectError,
+http://www.max.k12.nd.us/apps/events/2026/10/22/36013684/?REC_ID=36013684&id=0,school,MAX HIGH SCHOOL,http_403,
+http://www.watford-city.k12.nd.us,school,WATFORD CITY VIRTUAL ACADEMY HIGH SCHOOL,fetch_error:ConnectError,
+http://www.watford-city.k12.nd.us/schools/watford-middle/index,school,WATFORD CITY MIDDLE SCHOOL,fetch_error:ConnectError,
+http://www.medina.k12.nd.us,school,MEDINA HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.midwayk12.org,school,MIDWAY ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.minnewaukan.k12.nd.us,school,MINNEWAUKAN HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.minot.k12.nd.us,school,MINOT NORTH HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.mintok12.org/,school,MINTO HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.wilton.k12.nd.us,school,WILTON HIGH SCHOOL,no_staff_content_found,2 candidate page(s) checked
+http://www.munich.K12.nd.us,school,MUNICH HIGH SCHOOL,fetch_error:ConnectError,
+http://www.napoleon.k12.nd.us,school,NAPOLEON HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.nedrose.k12.nd.us/,school,NEDROSE HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.ray.k12.nd.us,school,RAY HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.newtown.k12.nd.us/,school,NEW TOWN MIDDLE SCHOOL,no_staff_content_found,2 candidate page(s) checked
+http://www.oberon.k12.nd.us/,school,OBERON ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.pingree-buchanan.k12.nd.us,school,PINGREE-BUCHANAN ELEMENTARY SCHOOL,no_staff_content_found,2 candidate page(s) checked
+http://www.roletteschool.k12.nd.us,school,ROLETTE HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.carson.k12.nd.us/,school,ROOSEVELT ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.sawyer.k12.nd.us/,school,SAWYER HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.Selfridge.k12.nd.us,school,SELFRIDGE HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.stjohn.k12.nd.us,school,SAINT JOHN HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.stanley.k12.nd.us,school,STANLEY HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.starkweather.k12.nd.us/,school,STARKWEATHER HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.sweetbriar17.com/,school,SWEET BRIAR SCHOOL,no_staff_content_found,2 candidate page(s) checked
+http://www.thompson.k12.nd.us,school,THOMPSON HIGH SCHOOL,fetch_error:ConnectError,
+http://www.tlm.k12.nd.us,school,TURTLE LAKE-MERCER HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.twinbuttes.k12.nd.us,school,TWIN BUTTES ELEMENTARY SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.underwoodschool.org/,school,UNDERWOOD HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.dbhs.united.k12.nd.us,school,DES LACS-BURLINGTON HIGH SCHOOL,no_staff_content_found,3 candidate page(s) checked
+http://www.warwick.k12.nd.us/,school,WARWICK MIDDLE SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.washburn.k12.nd.us,school,WASHBURN HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.west-fargo.k12.nd.us/ecc,school,EARLY CHILDHOOD CENTER,http_404,
+http://www.west-fargo.k12.nd.us/eastwood,school,EASTWOOD ELEMENTARY SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/harwood,school,HARWOOD ELEMENTARY SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/horace,school,HORACE ELEMENTARY SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/cheney,school,CHENEY MIDDLE SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/south,school,SOUTH ELEMENTARY SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/wfhs,school,WEST FARGO HIGH SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/westside,school,WESTSIDE ELEMENTARY SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/berger,school,L E BERGER ELEMENTARY SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/aurora,school,AURORA ELEMENTARY SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/shs,school,WEST FARGO SHEYENNE HIGH SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/osgood,school,OSGOOD ELEM SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/,school,WEST FARGO MIDDLE VIRTUAL ACADEMY,no_staff_content_found,3 candidate page(s) checked
+http://www.west-fargo.k12.nd.us/liberty,school,LIBERTY MIDDLE SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/independence,school,INDEPENDENCE ELEMENTARY SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/legacy,school,LEGACY ELEMENTARY SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/brooksharbor,school,BROOKS HARBOR ELEMENTARY SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/willowpark,school,WILLOW PARK ELEMENTARY SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/deercreek,school,DEER CREEK ELEMENTARY SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/heritage,school,HERITAGE MIDDLE SCHOOL,http_404,
+http://www.west-fargo.k12.nd.us/chs,school,WEST FARGO COMMUNITY HIGH SCHOOL,http_404,
+http://www.westhope.k12.nd.us/,school,WESTHOPE HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.white-shield.k12.nd.us/,school,WHITE SHIELD HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.wing.k12.nd.us,school,WING HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.wishek.k12.nd.us,school,WISHEK HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.wyndmere.k12.nd.us,school,WYNDMERE HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://www.mcclusky.k12.nd.us,school,MCCLUSKY-GOODRICH HIGH SCHOOL,no_staff_content_found,1 candidate page(s) checked
+http://sites.google.com/valley-edinburgk12.com/valleyedinburgschools/home,district,VALLEY-EDINBURG 118,no_staff_content_found,1 candidate page(s) checked
+http://www.hankinsonschool.com/,district,HANKINSON 8,no_staff_content_found,2 candidate page(s) checked
+http://www.gospoilers.org,district,GRAFTON 18,no_staff_content_found,1 candidate page(s) checked
+http://marmarthschool12.com,district,MARMARTH 12,fetch_error:ConnectError,
+http://www.nd.gov,district,MARMOT SCHOOLS,no_staff_content_found,1 candidate page(s) checked

@@ -1,0 +1,55 @@
+{% from "macros.html" import window_pill %}
+<div class="window-section" id="window-section">
+  {% if school.buying_windows %}
+    {% for bw in school.buying_windows %}
+    <details class="window-edit">
+      <summary>
+        {{ window_pill(bw.status, bw.label) }}
+        <span class="muted small">
+          {{ bw.season|capitalize }}, {{ bw.source }}{% if bw.notes %} &middot; {{ bw.notes }}{% endif %}
+        </span>
+        <span class="edit-hint muted small">edit</span>
+      </summary>
+      <form class="window-edit-form"
+            hx-post="/buying_windows/{{ bw.id }}"
+            hx-target="#window-section" hx-swap="outerHTML">
+        <div class="field">
+          <label>Season</label>
+          <select name="season">
+            <option value="fall" {{ 'selected' if bw.season == 'fall' }}>Fall</option>
+            <option value="spring" {{ 'selected' if bw.season == 'spring' }}>Spring</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Opens (mm / dd)</label>
+          <div class="date-pair">
+            <input type="number" name="decision_start_month" min="1" max="12" value="{{ bw.decision_start_month }}" placeholder="MM">
+            <input type="number" name="decision_start_day" min="1" max="31" value="{{ bw.decision_start_day }}" placeholder="DD">
+          </div>
+        </div>
+        <div class="field">
+          <label>Closes (mm / dd)</label>
+          <div class="date-pair">
+            <input type="number" name="decision_end_month" min="1" max="12" value="{{ bw.decision_end_month }}" placeholder="MM">
+            <input type="number" name="decision_end_day" min="1" max="31" value="{{ bw.decision_end_day }}" placeholder="DD">
+          </div>
+        </div>
+        <div class="field">
+          <label>Source</label>
+          <select name="source">
+            <option value="stated" {{ 'selected' if bw.source == 'stated' }}>Stated (they told us)</option>
+            <option value="observed" {{ 'selected' if bw.source == 'observed' }}>Observed (we found evidence)</option>
+          </select>
+        </div>
+        <div class="field notes-field">
+          <label>Note</label>
+          <input type="text" name="notes" value="{{ bw.notes or '' }}" placeholder="Optional">
+        </div>
+        <button type="submit" class="save-window-btn">Save</button>
+      </form>
+    </details>
+    {% endfor %}
+  {% else %}
+    <span class="empty-hint">No decision window on file.</span>
+  {% endif %}
+</div>

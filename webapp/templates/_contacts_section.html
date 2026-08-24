@@ -1,0 +1,86 @@
+{% from "macros.html" import conf_badge, log_buttons %}
+<section class="card" id="contacts-section">
+  <h2>Contacts</h2>
+
+  <div class="contact-card office-card">
+    <div class="contact-name">
+      General / Front Office
+      <span class="tag">not a specific person</span>
+    </div>
+    <div class="contact-method">
+      <div class="contact-fields">
+        {% if school.phone %}
+          <span class="field-item"><span class="field-icon">&#9742;</span><span class="phone-num"><a href="tel:{{ school.phone }}">{{ school.phone|phone }}</a></span></span>
+        {% else %}
+          <span class="muted">No phone on file for the main office</span>
+        {% endif %}
+      </div>
+    </div>
+    {{ log_buttons(school.id, None, 'office', default_entity=school.default_buying_entity, compact=True) }}
+  </div>
+
+  {% if school.contacts %}
+    {% for role in ROLE_PRIORITY %}
+      {% if role in contacts_by_role %}
+      <div class="role-group">
+        <h3>{{ ROLE_LABELS.get(role, role) }}</h3>
+        {% for c in contacts_by_role[role] %}
+        <div class="contact-card">
+          <div class="contact-name">
+            {{ c.first_name }} {{ c.last_name }}
+            {% if c.other_roles %}
+              <span class="muted small">(also listed as {{ c.other_roles|map('replace', '_', ' ')|map('title')|join(', ') }})</span>
+            {% endif %}
+          </div>
+          {% if c.role_detail %}<div class="muted small">{{ c.role_detail }}</div>{% endif %}
+
+          {% for m in c.methods %}
+          <div class="contact-method">
+            <div class="contact-fields">
+              {% if m.email %}
+                <span class="field-item"><span class="field-icon">&#9993;</span><span><a href="mailto:{{ m.email }}">{{ m.email }}</a></span></span>
+              {% else %}
+                <details class="inline-add">
+                  <summary class="add-link">+ Add email</summary>
+                  <form class="inline-add-form" hx-patch="/contacts/{{ m.id }}" hx-target="#contacts-section" hx-swap="outerHTML">
+                    <input type="hidden" name="school_id" value="{{ school.id }}">
+                    <input type="email" name="email" placeholder="email@school.org" required autofocus>
+                    <button type="submit">Save</button>
+                  </form>
+                </details>
+              {% endif %}
+              {% if m.phone %}
+                <span class="field-item"><span class="field-icon">&#9742;</span><span class="phone-num"><a href="tel:{{ m.phone }}">{{ m.phone|phone }}</a>{{ ' x' + m.phone_ext if m.phone_ext }}</span></span>
+              {% else %}
+                <details class="inline-add">
+                  <summary class="add-link">+ Add phone</summary>
+                  <form class="inline-add-form" hx-patch="/contacts/{{ m.id }}" hx-target="#contacts-section" hx-swap="outerHTML">
+                    <input type="hidden" name="school_id" value="{{ school.id }}">
+                    <input type="tel" name="phone" placeholder="(701) 555-0100" required autofocus>
+                    <button type="submit">Save</button>
+                  </form>
+                </details>
+              {% endif %}
+              {{ conf_badge(m.email_confidence) }}
+            </div>
+            <div class="muted small">
+              {% if m.last_verified_at %}
+                Verified {{ m.last_verified_at.strftime('%Y-%m-%d') }} via {{ m.last_verified_method or 'unknown method' }}
+              {% else %}
+                Never verified &middot; source: {{ m.email_source }}
+              {% endif %}
+              {% if m.source_url %} &middot; <a href="{{ m.source_url }}" target="_blank" rel="noopener">View source &#8599;</a>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+
+          {{ log_buttons(school.id, c.id, 'c' ~ c.id, default_entity=c.default_entity, compact=True, show_entity_picker=False) }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    <p class="empty-hint">No named contacts on file for this school yet.</p>
+  {% endif %}
+</section>

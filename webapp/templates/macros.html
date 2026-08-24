@@ -1,0 +1,67 @@
+{% macro conf_badge(confidence) -%}
+{% set cls = {
+    'verified': 'conf-verified', 'high': 'conf-verified',
+    'medium': 'conf-medium',
+    'low': 'conf-low', 'unknown': 'conf-low',
+    'invalid': 'conf-invalid'
+}.get(confidence, 'conf-low') %}
+{% set label = {
+    'verified': 'Verified', 'high': 'High confidence',
+    'medium': 'Derived — medium confidence',
+    'low': 'Low confidence', 'unknown': 'Unverified',
+    'invalid': 'Invalid — do not use'
+}.get(confidence, 'Unverified') %}
+<span class="conf-badge {{ cls }}" title="{{ label }}"><span class="conf-dot"></span>{{ label }}</span>
+{%- endmacro %}
+
+{% macro window_pill(status, label) -%}
+{% set cls = {'in_window': 'win-open', 'upcoming': 'win-upcoming', 'passed': 'win-passed', 'none': 'win-none'}.get(status, 'win-none') %}
+<span class="win-pill {{ cls }}">{{ label }}</span>
+{%- endmacro %}
+
+{# Every instance is self-contained: its own entity picker (or fixed value), its own
+   note field. No shared page-level state - a school can have a live PTO relationship
+   and a live booster relationship at once, and one action's entity must never leak
+   into another's.
+
+   show_entity_picker=False is for a named contact: their role (already shown as the
+   card's section heading - Principal, Music Teacher, etc.) already implies the buying
+   entity, so a second selector on every contact card was redundant. The entity still
+   gets submitted, just as a fixed hidden value instead of something to choose. #}
+{% macro log_buttons(school_id, contact_id, key_prefix, default_entity='unknown', compact=False, show_entity_picker=True) %}
+<div class="log-buttons {{ 'compact' if compact else 'primary-log' }}">
+  <div class="log-toprow">
+    {% if show_entity_picker %}
+    <select id="entity-{{ key_prefix }}" name="buying_entity" class="entity-mini-select">
+      {% for val in BUYING_ENTITY_ORDER %}
+      <option value="{{ val }}" {{ 'selected' if val == default_entity }}>{{ BUYING_ENTITY_LABELS[val] }}</option>
+      {% endfor %}
+    </select>
+    {% else %}
+    <input type="hidden" id="entity-{{ key_prefix }}" name="buying_entity" value="{{ default_entity }}">
+    {% endif %}
+    <input type="text" id="notes-{{ key_prefix }}" name="notes" class="notes-input" placeholder="Optional note">
+  </div>
+  <div class="log-toprow followup-row">
+    <label class="followup-check-label">
+      <input type="checkbox" id="followup-{{ key_prefix }}" name="needs_follow_up" value="true" class="followup-check">
+      Needs follow-up
+    </label>
+    <input type="date" id="followupdate-{{ key_prefix }}" name="follow_up_date" class="followup-date" title="Leave blank to use the default follow-up interval">
+  </div>
+  <div class="log-btn-row">
+    {% for label, channel, outcome, key in CHANNEL_BUTTONS %}
+    <button type="button" class="log-btn" data-shortcut="{{ key }}" data-scope="{{ key_prefix }}"
+      hx-post="/schools/{{ school_id }}/actions"
+      hx-include="#entity-{{ key_prefix }}, #notes-{{ key_prefix }}, #followup-{{ key_prefix }}, #followupdate-{{ key_prefix }}"
+      hx-vals='{"channel": "{{ channel }}"{% if outcome %}, "outcome": "{{ outcome }}"{% endif %}{% if contact_id %}, "contact_id": {{ contact_id }}{% endif %}}'
+      hx-target="#activity-timeline" hx-swap="innerHTML"
+      hx-indicator="this"
+      title="{{ label }}{% if not compact %} ({{ key }}){% endif %}">
+      <span class="btn-label">{{ label }}</span>
+      <span class="btn-check">&#10003;</span>
+    </button>
+    {% endfor %}
+  </div>
+</div>
+{% endmacro %}

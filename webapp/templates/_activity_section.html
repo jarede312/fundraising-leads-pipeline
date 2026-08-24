@@ -1,0 +1,8 @@
+<section class="card">
+  <h2>Activity</h2>
+  <div id="activity-timeline">
+    {% with activity_groups = school.activity_groups, school_id = school.id %}
+      {% include "_activity_timeline.html" %}
+    {% endwith %}
+  </div>
+</section>

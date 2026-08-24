@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Schools — Prospect Engine{% endblock %}
+{% block content %}
+<div class="page">
+  <header class="page-header">
+    <h1>Schools</h1>
+    <div class="page-sub">{{ total }} open school{{ 's' if total != 1 else '' }}</div>
+  </header>
+
+  <form id="filters" class="filters" hx-get="/schools" hx-target="#results" hx-push-url="true" hx-trigger="change, submit, search">
+    <div class="search-row">
+      <input type="search" name="q" class="search-input" value="{{ filters.q or '' }}"
+             placeholder="Search school, district, city, contact name, or phone number&hellip;">
+    </div>
+    <div class="filter-group">
+      <label>Segment
+        <select name="segment">
+          <option value="">All</option>
+          {% for s in segments %}
+          <option value="{{ s }}" {{ 'selected' if filters.segment == s }}>{{ s|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Enrollment
+        <input type="number" name="enrollment_min" placeholder="min" value="{{ filters.enrollment_min or '' }}" style="width:5.5em">
+        <span class="range-sep">–</span>
+        <input type="number" name="enrollment_max" placeholder="max" value="{{ filters.enrollment_max or '' }}" style="width:5.5em">
+      </label>
+      <label>Score <span class="info-tip" title="{{ SCORE_METHODOLOGY }}">(?)</span>
+        <input type="number" step="0.1" name="score_min" placeholder="min" value="{{ filters.score_min or '' }}" style="width:4.5em">
+        <span class="range-sep">–</span>
+        <input type="number" step="0.1" name="score_max" placeholder="max" value="{{ filters.score_max or '' }}" style="width:4.5em">
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" name="has_pto_contact" value="true" {{ 'checked' if filters.has_pto_contact }}>
+        Has PTO/booster contact
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" name="has_verified_email" value="true" {{ 'checked' if filters.has_verified_email }}>
+        Has high-confidence email
+      </label>
+      <input type="hidden" name="sort" value="{{ sort }}">
+      <input type="hidden" name="dir" value="{{ dir }}">
+    </div>
+  </form>
+
+  <div id="results">
+    {% include "_school_table.html" %}
+  </div>
+</div>
+{% endblock %}

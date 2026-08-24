@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}{{ school.name|title }} — Prospect Engine{% endblock %}
+{% block content %}
+<div class="page detail-page">
+  <a href="/schools" class="back-link">&larr; Back to list</a>
+
+  <header class="detail-header">
+    <div>
+      <h1>{{ school.name|title }}</h1>
+      <div class="page-sub">
+        {% if school.district_name %}{{ school.district_name|title }}
+        {% elif school.school_type == 'private' %}Private school, no district
+        {% else %}No district on file{% endif %}
+        &middot; {{ school.city|title }}, {{ school.state_code }}
+        &middot; {{ school.segment|capitalize if school.segment else 'Segment unknown' }}
+        &middot; Enrollment {{ school.enrollment if school.enrollment is not none else '—' }}
+        {% if school.virtual_status and school.virtual_status != 'none' %}
+        &middot; <span class="tag">{{ school.virtual_status|capitalize }} virtual</span>
+        {% endif %}
+      </div>
+      {% if school.phone or school.website_url %}
+      <div class="page-sub muted">
+        {{ school.phone|phone if school.phone }}
+        {% if school.website_url %} &middot; <a href="{{ school.website_url }}" target="_blank" rel="noopener">{{ school.website_url }}</a>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="score-box">
+      {% if school.score_row %}
+      <div class="score-big" title="{{ SCORE_METHODOLOGY }}">{{ '%.2f'|format(school.score_row.score) }}</div>
+      <div class="score-version">{{ school.score_row.score_version }} &middot; <span class="info-tip" title="{{ SCORE_METHODOLOGY }}">what's this?</span></div>
+      <p class="rationale">{{ school.score_row.rationale }}</p>
+      {% else %}
+      <div class="empty-hint">Not yet scored</div>
+      {% endif %}
+    </div>
+  </header>
+
+  {% include "_contacts_section.html" %}
+
+  <section class="card">
+    <h2>Decision Window</h2>
+    <div class="window-inline">
+      {% include "_window_section.html" %}
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Linked Nonprofit Org (IRS)</h2>
+    {% if school.org_links %}
+      {% for o in school.org_links %}
+      <div class="org-card {{ '' if o.confirmed else 'unconfirmed' }}">
+        <div class="contact-name">
+          {{ o.name|title }}
+          <span class="tag">{{ o.org_type|capitalize if o.org_type else 'Unclassified' }}</span>
+          {% if not o.confirmed %}<span class="tag tag-warn">Unconfirmed match</span>{% endif %}
+        </div>
+        <div class="muted small">
+          {{ o.filing_type or '990-N' }} FY{{ o.fiscal_year }}
+          {% if o.gross_receipts %} &middot; Gross receipts ${{ '{:,.0f}'.format(o.gross_receipts) }}{% endif %}
+          {% if o.total_revenue %} &middot; Revenue ${{ '{:,.0f}'.format(o.total_revenue) }}{% endif %}
+        </div>
+        {% if o.principal_officer_name and not o.confirmed %}
+        <div class="muted small">Principal officer: {{ o.principal_officer_name }} (unconfirmed match — not yet in Contacts)</div>
+        {% elif o.principal_officer_name %}
+        <div class="muted small">Principal officer listed under Contacts above</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="empty-hint">No IRS-filed nonprofit matched to this school.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Signals</h2>
+    <p class="muted small section-hint">Automatic alerts when something changes that's worth a call - a new principal, a new music teacher, or PTO officer turnover. These are detected from source data during data ingest, not something you log by hand.</p>
+    {% if school.signals %}
+      <ul class="timeline">
+        {% for sig in school.signals %}
+        <li><span class="muted">{{ sig.detected_at.strftime('%Y-%m-%d') }}</span> — {{ sig.signal_type|replace('_',' ')|capitalize }}
+          {% if sig.notes %}<div class="muted small">{{ sig.notes }}</div>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty-hint">No signals detected yet.</p>
+    {% endif %}
+  </section>
+
+  {% include "_activity_section.html" %}
+</div>
+{% endblock %}

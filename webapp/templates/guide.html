@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Guide — Prospect Engine{% endblock %}
+{% block content %}
+<div class="page guide-page">
+  <header class="page-header">
+    <h1>User Guide</h1>
+    <div class="page-sub">Covers the app as it exists today. This will be edited as features change - if something here doesn't match what you see on screen, the screen is right.</div>
+  </header>
+
+  <section class="card">
+    <h2>What this tool is for</h2>
+    <p>Prospect Engine ranks every open school by how good a fundraising prospect it is right now, keeps a record of every contact attempt you make, and tells you who to call next. It's built to be the one screen you keep open all day - not a reference you check occasionally.</p>
+  </section>
+
+  <section class="card guide-toc">
+    <h2>Contents</h2>
+    <ul>
+      <li><a href="#today">Today (the home screen)</a></li>
+      <li><a href="#schools">All Schools (the full list)</a></li>
+      <li><a href="#queue">Queue mode</a></li>
+      <li><a href="#detail">A school's page</a></li>
+      <li><a href="#shortcuts">Keyboard shortcuts</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ul>
+  </section>
+
+  <section class="card" id="today">
+    <h2>Today (the home screen)</h2>
+    <p>This is what loads at <code>/</code>. It's a short, bounded list - never more than 15 items at a time (30 with "Show more") - of the schools most worth calling today. Every item has a reason: either a signal fired (new principal, new music teacher, PTO turnover), or it's due for a follow-up - never contacted at all, or enough time has passed since the last attempt (10 days normally, 5 once a couple of attempts have gone unanswered), or a rep set a specific follow-up date by hand while logging an attempt. When nothing else applies, items are ranked by score, so an empty queue defaults to "call your best-scored uncalled schools first."</p>
+    <p>There's deliberately no "you have 47 overdue" counter. The list recomputes from scratch each day rather than piling up a backlog number that would make the tool feel like it's nagging.</p>
+    <p>Each row has a <strong>dismiss</strong> control: <em>Done for now</em> or <em>Not interested</em> clear it permanently (until a new trigger fires), <em>Snooze 1/2 weeks</em> brings it back later. Dismissing removes it from today's list immediately.</p>
+  </section>
+
+  <section class="card" id="schools">
+    <h2>All Schools</h2>
+    <p>The full list of open schools. A search box matches school name, district, city, contact name, or phone number (formatting doesn't matter - "7015550100" and "(701) 555-0100" find the same thing), plus filters (segment, enrollment range, score range, has a PTO/booster contact, has a high-confidence email) and sortable columns. Filtering and sorting happen on the server - the URL always reflects exactly what you're looking at, so you can bookmark or share a filtered view.</p>
+    <p><strong>Work this list</strong> (top of the results) starts Queue mode over exactly the filtered/sorted set you're looking at - useful for "call every middle school with no PTO contact" type sessions.</p>
+  </section>
+
+  <section class="card" id="queue">
+    <h2>Queue mode</h2>
+    <p>A focused, one-school-at-a-time view for working through a filtered list without going back to the table between calls. Shows "School 4 of 62" and Previous/Next controls. It's the same school detail page underneath - contacts, logging, decision window, activity - just wrapped with navigation. Press <kbd>Enter</kbd> to advance once you're done with a school, or <kbd>Esc</kbd> / "Exit queue" to return to the filtered list.</p>
+  </section>
+
+  <section class="card" id="detail">
+    <h2>A school's page</h2>
+
+    <h3>Score</h3>
+    <p>The big number top-right is a 0-10 composite - hover it (or the "what's this?" link) for the exact weighting. It updates when the scoring job is re-run, not live.</p>
+
+    <h3>Contacts</h3>
+    <p>Every known person at the school, grouped by role, plus a standing <strong>General / Front Office</strong> entry for when you're calling the main line rather than a specific person. Two people at different sources sometimes get scraped as separate records - when that happens for the same name, they're merged into one card but every distinct email/phone found for them is kept, since sources occasionally disagree and the disagreement itself is worth seeing.</p>
+    <p>If a contact is missing an email or phone, a <strong>+ Add email</strong> / <strong>+ Add phone</strong> link appears - use it to fill in what you find by hand. Known emails and phone numbers are clickable (<code>mailto:</code> / <code>tel:</code>).</p>
+    <p>Each contact card has its own logging controls: optionally type a note, then click what happened - Called, Left message, Emailed, Video call, or Mailed. Which <strong>buying entity</strong> (PTO, Band Boosters, School Admin, etc.) the attempt counts toward is inferred automatically from that person's role - a Band Booster contact logs to Band Boosters, a Principal logs to School Admin - so there's nothing to pick. A school can have several live relationships at once, and they stay tracked separately. The General / Front Office card is the exception: since it isn't tied to a specific person's role, it keeps an entity picker so you can say who the call was actually about.</p>
+
+    <h3>Decision Window</h3>
+    <p>The date range each buying entity typically makes its purchasing decision. Click "edit" on a window to correct the dates, season, or source (stated by the school vs. observed from past behavior) if what's on file is wrong.</p>
+
+    <h3>Linked Nonprofit Org (IRS)</h3>
+    <p>Where a school's PTO/booster organization has been matched to a real IRS nonprofit filing, its financials show here - gross receipts and revenue are a rough proxy for fundraising capacity. "Unconfirmed match" means the link is a probable match, not a certain one.</p>
+
+    <h3>Signals</h3>
+    <p>Automatically detected changes worth a call - a new principal, a new music teacher, PTO officer turnover. These come from source data during ingest; you never log one by hand. An empty list just means nothing's been detected yet, not that nothing's been checked.</p>
+
+    <h3>Activity</h3>
+    <p>Every logged attempt, grouped by buying entity, newest first. If you clicked the wrong outcome, use the <strong>"Different result?"</strong> chips under an entry to correct it without logging a duplicate. If an entry has no note, a <strong>+ Add note</strong> link lets you add one after the fact - handy since you often only know what's worth writing down after the call ends.</p>
+  </section>
+
+  <section class="card" id="shortcuts">
+    <h2>Keyboard shortcuts</h2>
+    <table class="shortcuts-table">
+      <tr><th colspan="2">All Schools list</th></tr>
+      <tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>Move selection down / up</td></tr>
+      <tr><td><kbd>Enter</kbd></td><td>Open the selected school</td></tr>
+      <tr><th colspan="2">A school's page (and Queue mode)</th></tr>
+      <tr><td><kbd>c</kbd></td><td>Log: Called</td></tr>
+      <tr><td><kbd>l</kbd></td><td>Log: Left message</td></tr>
+      <tr><td><kbd>e</kbd></td><td>Log: Emailed</td></tr>
+      <tr><td><kbd>v</kbd></td><td>Log: Video call</td></tr>
+      <tr><td><kbd>m</kbd></td><td>Log: Mailed</td></tr>
+      <tr><td><kbd>n</kbd></td><td>Focus the notes field</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Back to the list / exit queue</td></tr>
+      <tr><th colspan="2">Queue mode only</th></tr>
+      <tr><td><kbd>Enter</kbd></td><td>Next school in the queue</td></tr>
+      <tr><td><kbd>p</kbd> / <kbd>&larr;</kbd></td><td>Previous school</td></tr>
+    </table>
+    <p class="muted small">Shortcuts are disabled while typing in a text field.</p>
+  </section>
+
+  <section class="card" id="glossary">
+    <h2>Glossary</h2>
+    <dl class="guide-glossary">
+      <dt>Buying entity</dt>
+      <dd>Which relationship an attempt or follow-up belongs to at a school: School Admin, PTO, PTA, or a specific booster club (Band, Choir, Drama, Athletic). A school can have several live at once - they never share activity history.</dd>
+      <dt>Confidence badge</dt>
+      <dd>How much to trust a contact's email: <strong>Verified</strong>/<strong>High confidence</strong> (green), <strong>Derived - medium confidence</strong> (amber, e.g. guessed from a name + known email pattern), <strong>Low confidence</strong>/<strong>Unverified</strong> (gray), <strong>Invalid - do not use</strong> (red, known bad).</dd>
+      <dt>Decision window</dt>
+      <dd>The recurring time of year a buying entity typically decides on a fundraiser. Reference info you can correct per school - it does not currently drive Today, since nearly every school still carries the same generic placeholder window.</dd>
+      <dt>Signal</dt>
+      <dd>An automatically detected change (new principal, new music teacher, PTO officer turnover) that often means it's a good time to re-engage.</dd>
+      <dt>Follow-up</dt>
+      <dd>A reminder to reach out again - created automatically (a signal firing, or enough time passing since the last attempt/ever) or by hand (checking "Needs follow-up" while logging an attempt, optionally with your own date). These are what populate the Today screen, each on its due date.</dd>
+    </dl>
+  </section>
+</div>
+{% endblock %}

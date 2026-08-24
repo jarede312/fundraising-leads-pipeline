@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Queue — Prospect Engine{% endblock %}
+{% block content %}
+<div class="page">
+  <a href="/schools?{{ build_qs(qs_state, {'pos': None}) }}" class="back-link">&larr; Exit queue</a>
+  <p class="empty-hint" style="margin-top:16px;">No schools match this filter set.</p>
+</div>
+{% endblock %}

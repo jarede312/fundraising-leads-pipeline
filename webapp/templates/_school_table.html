@@ -1,0 +1,61 @@
+{% from "macros.html" import conf_badge %}
+<div class="results-bar">
+  <a class="work-list-btn" href="/queue?{{ build_qs(qs_state, {'pos': 0, 'page': None}) }}">&#9654; Work this list</a>
+  <span class="muted small">Starts a focused, one-school-at-a-time session over these {{ total }} school{{ 's' if total != 1 else '' }}.</span>
+</div>
+<table class="school-table" id="school-table">
+  <thead>
+    <tr>
+      {% for col, label in [('name','School'), ('district','District'),
+                             ('segment','Segment'), ('enrollment','Enrollment'),
+                             ('score','Score'), ('last_activity','Last Activity')] %}
+      {% set new_dir = 'asc' if (sort == col and dir == 'desc') else 'desc' %}
+      <th class="{{ 'sorted' if sort == col }}" {% if col == 'score' %}title="{{ SCORE_METHODOLOGY }}"{% endif %}>
+        <a href="/schools?{{ build_qs(qs_state, {'sort': col, 'dir': new_dir, 'page': 1}) }}">
+          {{ label }}{% if sort == col %}<span class="arrow">{{ '▲' if dir=='asc' else '▼' }}</span>{% endif %}
+        </a>
+      </th>
+      {% endfor %}
+      <th>Best Contact</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in schools %}
+    <tr class="school-row" data-href="/schools/{{ s.id }}" tabindex="0">
+      <td><a href="/schools/{{ s.id }}">{{ s.name|title }}</a></td>
+      <td>{{ s.district_name|title if s.district_name else '—' }}</td>
+      <td>{{ s.segment|capitalize if s.segment else '—' }}</td>
+      <td class="num">{{ s.enrollment if s.enrollment is not none else '—' }}</td>
+      <td class="num score-cell">{{ '%.2f'|format(s.score) if s.score is not none else '—' }}</td>
+      <td>{{ s.last_activity_at.strftime('%Y-%m-%d') if s.last_activity_at else 'Never' }}</td>
+      <td>
+        {% if s.contact_first_name %}
+          <div class="contact-cell">
+            <span>{{ s.contact_first_name }} {{ s.contact_last_name }}</span>
+            <span class="role-tag">{{ ROLE_LABELS.get(s.contact_role, s.contact_role) }}</span>
+            {{ conf_badge(s.contact_email_confidence) }}
+          </div>
+        {% else %}
+          <span class="empty-hint">No contact on file</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" class="empty-hint">No schools match these filters.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="pagination">
+  {% if page > 1 %}
+    <a href="/schools?{{ build_qs(qs_state, {'page': page - 1}) }}">&larr; Prev</a>
+  {% else %}
+    <span class="disabled">&larr; Prev</span>
+  {% endif %}
+  <span class="page-info">Page {{ page }} of {{ total_pages }}</span>
+  {% if page < total_pages %}
+    <a href="/schools?{{ build_qs(qs_state, {'page': page + 1}) }}">Next &rarr;</a>
+  {% else %}
+    <span class="disabled">Next &rarr;</span>
+  {% endif %}
+</div>

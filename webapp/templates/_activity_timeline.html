@@ -1,0 +1,50 @@
+{% if activity_groups %}
+  {% for entity, actions in activity_groups %}
+  <div class="activity-group">
+    <h3>{{ BUYING_ENTITY_LABELS.get(entity, entity) }}</h3>
+    {% for a in actions %}
+    <div class="activity-row">
+      <div class="activity-line">
+        <span class="activity-time">{{ a.occurred_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        {% if a.action_type != 'contacted' %}
+          <span class="activity-action-tag">{{ ACTION_TYPE_LABELS.get(a.action_type, a.action_type) }}</span>
+        {% else %}
+          <span class="activity-channel">{{ a.channel|capitalize if a.channel else '—' }}</span>
+          <span class="activity-outcome {{ 'outcome-none' if not a.outcome }}">
+            {{ OUTCOME_LABELS.get(a.outcome, a.outcome) if a.outcome else 'No outcome recorded' }}
+          </span>
+        {% endif %}
+        {% if a.first_name %}<span class="muted">— {{ a.first_name }} {{ a.last_name }}</span>{% endif %}
+      </div>
+      {% if a.notes %}
+        <div class="muted small activity-note">{{ a.notes }}</div>
+      {% else %}
+        <details class="inline-add">
+          <summary class="add-link small">+ Add note</summary>
+          <form class="inline-add-form" hx-patch="/actions/{{ a.id }}/notes" hx-target="#activity-timeline" hx-swap="innerHTML">
+            <input type="hidden" name="school_id" value="{{ school_id }}">
+            <input type="text" name="notes" placeholder="What happened?" autofocus>
+            <button type="submit">Save</button>
+          </form>
+        </details>
+      {% endif %}
+      {% if a.channel and OUTCOME_OPTIONS_BY_CHANNEL.get(a.channel) %}
+      <div class="refine-chips">
+        <span class="muted small">Different result?</span>
+        {% for o in OUTCOME_OPTIONS_BY_CHANNEL[a.channel] %}
+          {% if o != a.outcome %}
+          <button type="button" class="chip"
+            hx-patch="/actions/{{ a.id }}/outcome"
+            hx-vals='{"school_id": {{ school_id }}, "outcome": "{{ o }}"}'
+            hx-target="#activity-timeline" hx-swap="innerHTML">{{ OUTCOME_LABELS[o] }}</button>
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+{% else %}
+  <p class="empty-hint">No activity logged yet.</p>
+{% endif %}

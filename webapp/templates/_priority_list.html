@@ -1,0 +1,38 @@
+{% from "macros.html" import window_pill %}
+<div id="priority-list">
+{% if rows %}
+  <ul class="priority-list">
+    {% for r in rows %}
+    <li class="priority-row">
+      <div class="priority-main">
+        <a href="/schools/{{ r.school_id }}" class="priority-school">{{ r.school_name|title }}</a>
+        <span class="tag">{{ BUYING_ENTITY_LABELS.get(r.buying_entity, r.buying_entity) }}</span>
+        <span class="muted small">{{ r.city|title }} &middot; {{ r.segment|capitalize if r.segment else '—' }}</span>
+        {% if r.score is not none %}<span class="priority-score">{{ '%.2f'|format(r.score) }}</span>{% endif %}
+        <span class="priority-due">Next follow-up: {{ 'today' if r.due_date == today else r.due_date.strftime('%Y-%m-%d') }}</span>
+      </div>
+      <div class="priority-reason">{{ r.reason_text }}</div>
+      <details class="priority-dismiss">
+        <summary class="muted small">dismiss</summary>
+        <div class="dismiss-options">
+          {% for val, label in [('done','Done for now'), ('1w','Snooze 1 week'), ('2w','Snooze 2 weeks'), ('not_interested','Not interested')] %}
+          <button type="button" class="dismiss-btn"
+            hx-post="/priority/dismiss"
+            hx-vals='{"school_id": {{ r.school_id }}, "buying_entity": "{{ r.buying_entity }}", "duration": "{{ val }}"}'
+            hx-target="#priority-list" hx-swap="outerHTML">{{ label }}</button>
+          {% endfor %}
+        </div>
+      </details>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if not show_more and total > rows|length %}
+  <a class="show-more-link" href="/?show_more=true">Show more</a>
+  {% endif %}
+{% else %}
+  <div class="priority-empty">
+    <p>Nothing needs your attention today.</p>
+    {% if next_window %}<p class="muted">{{ next_window }}</p>{% endif %}
+  </div>
+{% endif %}
+</div>

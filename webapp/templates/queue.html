@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Queue — {{ school.name|title }} — Prospect Engine{% endblock %}
+{% block content %}
+<div class="page detail-page queue-page">
+  <div class="queue-bar">
+    <a href="/schools?{{ build_qs(qs_state, {'pos': None}) }}" class="back-link">&larr; Exit queue</a>
+    <span class="queue-pos">School {{ pos + 1 }} of {{ total }}</span>
+    <div class="queue-nav">
+      {% if pos > 0 %}
+        <a class="queue-nav-btn" href="/queue?{{ build_qs(qs_state, {'pos': pos - 1}) }}">&larr; Previous</a>
+      {% else %}
+        <span class="queue-nav-btn disabled">&larr; Previous</span>
+      {% endif %}
+      {% if pos + 1 < total %}
+        <a class="queue-nav-btn" id="queue-next" href="/queue?{{ build_qs(qs_state, {'pos': pos + 1}) }}">Next &rarr;</a>
+      {% else %}
+        <span class="queue-nav-btn disabled">Next &rarr;</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <header class="detail-header">
+    <div>
+      <h1><a href="/schools/{{ school.id }}">{{ school.name|title }}</a></h1>
+      <div class="page-sub">
+        {% if school.district_name %}{{ school.district_name|title }}
+        {% elif school.school_type == 'private' %}Private school, no district
+        {% else %}No district on file{% endif %}
+        &middot; {{ school.city|title }}, {{ school.state_code }}
+        &middot; {{ school.segment|capitalize if school.segment else 'Segment unknown' }}
+        &middot; Enrollment {{ school.enrollment if school.enrollment is not none else '—' }}
+      </div>
+      {% if school.phone %}<div class="page-sub muted">{{ school.phone|phone }}</div>{% endif %}
+    </div>
+    <div class="score-box">
+      {% if school.score_row %}
+      <div class="score-big">{{ '%.2f'|format(school.score_row.score) }}</div>
+      <p class="rationale">{{ school.score_row.rationale }}</p>
+      {% else %}
+      <div class="empty-hint">Not yet scored</div>
+      {% endif %}
+    </div>
+  </header>
+
+  {% include "_contacts_section.html" %}
+  <section class="card">
+    <h2>Decision Window</h2>
+    <div class="window-inline">
+      {% include "_window_section.html" %}
+    </div>
+  </section>
+  {% include "_activity_section.html" %}
+</div>
+{% endblock %}

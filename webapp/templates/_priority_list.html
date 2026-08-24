@@ -16,9 +16,13 @@
         <summary class="muted small">dismiss</summary>
         <div class="dismiss-options">
           {% for val, label in [('done','Done for now'), ('1w','Snooze 1 week'), ('2w','Snooze 2 weeks'), ('not_interested','Not interested')] %}
+          {# show_more rides along so a dismissal from the expanded (30-item) view
+             re-renders at 30, not the default 15 - without it every dismissal from
+             "Show more" silently collapsed the list back down, which read as items
+             disappearing rather than one item being removed. #}
           <button type="button" class="dismiss-btn"
             hx-post="/priority/dismiss"
-            hx-vals='{"school_id": {{ r.school_id }}, "buying_entity": "{{ r.buying_entity }}", "duration": "{{ val }}"}'
+            hx-vals='{"school_id": {{ r.school_id }}, "buying_entity": "{{ r.buying_entity }}", "duration": "{{ val }}", "show_more": {{ 'true' if show_more else 'false' }}}'
             hx-target="#priority-list" hx-swap="outerHTML">{{ label }}</button>
           {% endfor %}
         </div>

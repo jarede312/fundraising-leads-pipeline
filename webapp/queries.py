@@ -1149,3 +1149,55 @@ def get_dial_report(conn, since: date):
             {"since": since},
         )
         return cur.fetchone()
+
+
+# =============================================================================
+# Total activity history: a running, append-only log of every human-initiated write
+# (never page loads, never the self-heal regen) - see migrations/013_audit_log.sql.
+# =============================================================================
+
+def get_contact_display_name(conn, contact_id):
+    """'First Last' for an audit detail line, or None - contact_id is optional on most
+    of the calls this feeds, and a missing name should degrade the sentence, not error."""
+    if contact_id is None:
+        return None
+    with conn.cursor() as cur:
+        cur.execute("SELECT first_name, last_name FROM contacts WHERE id = %s", (contact_id,))
+        row = cur.fetchone()
+    if not row:
+        return None
+    return f"{row['first_name'] or ''} {row['last_name'] or ''}".strip() or None
+
+
+def log_audit(conn, org_id, user_id, action: str, school_id=None, contact_id=None, detail=None):
+    """Append one row. Does not commit - every caller already has its own writes to
+    commit together with this one; a mutation that 'happened' in the audit log but
+    rolled back everywhere else would be worse than no entry at all."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO audit_log (org_id, user_id, action, school_id, contact_id, detail)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (org_id, user_id, action, school_id, contact_id, detail),
+        )
+
+
+def get_audit_log(conn, limit: int, offset: int):
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT a.id, a.occurred_at, a.action, a.detail, a.school_id, a.contact_id,
+                   s.name AS school_name, u.display_name AS user_name
+            FROM audit_log a
+            LEFT JOIN schools s ON s.id = a.school_id
+            LEFT JOIN users u ON u.id = a.user_id
+            ORDER BY a.occurred_at DESC
+            LIMIT %(limit)s OFFSET %(offset)s
+            """,
+            {"limit": limit, "offset": offset},
+        )
+        rows = cur.fetchall()
+        cur.execute("SELECT count(*) AS n FROM audit_log")
+        total = cur.fetchone()["n"]
+    return rows, total

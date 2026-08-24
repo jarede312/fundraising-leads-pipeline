@@ -448,6 +448,14 @@ def create_action(
             f"Follow-up requested when logging a {channel} attempt"
             + (f': "{notes.strip()}"' if notes.strip() else ""),
         )
+    outcome_label = queries.OUTCOME_LABELS.get(outcome) if outcome else None
+    audit_detail = (
+        f"{channel.capitalize()}" + (f": {outcome_label}" if outcome_label else "")
+        + f" — {queries.get_contact_display_name(conn, contact_id) or 'General/Front Office'}"
+        f" ({queries.BUYING_ENTITY_LABELS.get(buying_entity, buying_entity)})"
+    )
+    queries.log_audit(conn, org_id, user_id, "Logged activity",
+                       school_id=school_id, contact_id=contact_id, detail=audit_detail)
     conn.commit()
     groups = queries.get_activity_grouped(conn, school_id)
     return templates.TemplateResponse(
@@ -468,6 +476,10 @@ def patch_action_outcome(
         raise HTTPException(400, "Unknown outcome.")
     if not queries.update_action_outcome(conn, action_id, school_id, outcome):
         raise HTTPException(404, "That activity entry no longer exists.")
+    org_id, user_id = queries.get_default_org_user(conn)
+    queries.log_audit(conn, org_id, user_id, "Corrected outcome", school_id=school_id,
+                       detail=f"→ {queries.OUTCOME_LABELS[outcome]}")
+    conn.commit()
     groups = queries.get_activity_grouped(conn, school_id)
     return templates.TemplateResponse(
         request, "_activity_timeline.html",
@@ -485,6 +497,10 @@ def patch_action_notes(
 ):
     if not queries.update_action_notes(conn, action_id, school_id, notes.strip() or None):
         raise HTTPException(404, "That activity entry no longer exists.")
+    org_id, user_id = queries.get_default_org_user(conn)
+    queries.log_audit(conn, org_id, user_id, "Edited note", school_id=school_id,
+                       detail=f'"{notes.strip()}"' if notes.strip() else "Cleared note")
+    conn.commit()
     groups = queries.get_activity_grouped(conn, school_id)
     return templates.TemplateResponse(
         request, "_activity_timeline.html",
@@ -501,6 +517,10 @@ def delete_action(
 ):
     if not queries.delete_action(conn, action_id, school_id):
         raise HTTPException(404, "That activity entry no longer exists.")
+    org_id, user_id = queries.get_default_org_user(conn)
+    queries.log_audit(conn, org_id, user_id, "Deleted activity entry", school_id=school_id,
+                       detail=f"Removed a logged activity (id {action_id})")
+    conn.commit()
     groups = queries.get_activity_grouped(conn, school_id)
     return templates.TemplateResponse(
         request, "_activity_timeline.html",
@@ -559,6 +579,13 @@ def create_or_advance_opportunity(
             conn, org_id, user_id, school_id, contact_id, buying_entity,
             None, None, close_note, action_type=action_type,
         )
+    audit_detail = (
+        f"{queries.get_contact_display_name(conn, contact_id) or queries.BUYING_ENTITY_LABELS.get(buying_entity, buying_entity)}"
+        f" → {queries.STAGE_LABELS[stage]}"
+        + (f" (${parsed_amount:,.2f})" if parsed_amount is not None else "")
+    )
+    queries.log_audit(conn, org_id, user_id, "Pipeline stage changed", school_id=school_id,
+                       contact_id=contact_id, detail=audit_detail)
     conn.commit()
 
     return templates.TemplateResponse(
@@ -579,6 +606,20 @@ def pipeline(request: Request, conn=Depends(get_conn)):
             "won_totals": won_totals,
             "dials_7d": dials_7d,
         },
+    )
+
+
+AUDIT_PAGE_SIZE = 50
+
+
+@app.get("/activity-history", response_class=HTMLResponse)
+def activity_history(request: Request, page: int = Query(1, ge=1), conn=Depends(get_conn)):
+    offset = (page - 1) * AUDIT_PAGE_SIZE
+    rows, total = queries.get_audit_log(conn, AUDIT_PAGE_SIZE, offset)
+    total_pages = max(1, -(-total // AUDIT_PAGE_SIZE))
+    return templates.TemplateResponse(
+        request, "activity_history.html",
+        {"rows": rows, "total": total, "page": page, "total_pages": total_pages},
     )
 
 
@@ -612,11 +653,17 @@ def add_contact(
         raise HTTPException(400, "Unknown role.")
     if not first_name.strip() and not last_name.strip():
         raise HTTPException(400, "Enter at least a first or last name.")
-    queries.create_contact(
+    new_contact_id = queries.create_contact(
         conn, school_id, role,
         first_name.strip() or None, last_name.strip() or None,
         role_detail.strip() or None, email.strip() or None, phone.strip() or None,
     )
+    org_id, user_id = queries.get_default_org_user(conn)
+    queries.log_audit(
+        conn, org_id, user_id, "Added contact", school_id=school_id, contact_id=new_contact_id,
+        detail=f"{queries.ROLE_LABELS.get(role, role)}: {first_name.strip()} {last_name.strip()}".strip(),
+    )
+    conn.commit()
     return templates.TemplateResponse(
         request, "_contacts_section.html", _contacts_ctx(conn, school_id),
     )
@@ -635,6 +682,15 @@ def patch_contact_info(
         conn, contact_id, school_id, email.strip() or None, phone.strip() or None
     ):
         raise HTTPException(404, "That contact no longer exists at this school.")
+    org_id, user_id = queries.get_default_org_user(conn)
+    changed = ", ".join(
+        f"{label} added" for label, val in (("Email", email.strip()), ("Phone", phone.strip())) if val
+    )
+    queries.log_audit(
+        conn, org_id, user_id, "Edited contact info", school_id=school_id, contact_id=contact_id,
+        detail=f"{queries.get_contact_display_name(conn, contact_id) or 'Contact'}: {changed or 'no change'}",
+    )
+    conn.commit()
     return templates.TemplateResponse(
         request, "_contacts_section.html", _contacts_ctx(conn, school_id),
     )
@@ -682,6 +738,13 @@ def update_buying_window(
     )
     if school_id is None:
         raise HTTPException(404, "That decision window no longer exists.")
+    org_id, user_id = queries.get_default_org_user(conn)
+    queries.log_audit(
+        conn, org_id, user_id, "Edited decision window", school_id=school_id,
+        detail=f"{season.capitalize()}: {decision_start_month:02d}/{decision_start_day:02d}"
+               f"–{decision_end_month:02d}/{decision_end_day:02d} (source: {source})",
+    )
+    conn.commit()
     school = {"buying_windows": queries.get_buying_windows(conn, school_id)}
     return templates.TemplateResponse(
         request, "_window_section.html", {"school": school},
@@ -740,6 +803,10 @@ def dismiss_priority_item(
     queries.log_action(
         conn, org_id, user_id, school_id, None, buying_entity,
         None, None, notes, action_type=DISMISS_ACTION_TYPE[duration],
+    )
+    queries.log_audit(
+        conn, org_id, user_id, "Dismissed from Today", school_id=school_id,
+        detail=f"{notes} ({queries.BUYING_ENTITY_LABELS.get(buying_entity, buying_entity)})",
     )
     conn.commit()
 

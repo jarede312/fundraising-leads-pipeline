@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Activity History — Prospect Engine{% endblock %}
+{% block content %}
+<div class="page">
+  <header class="page-header">
+    <h1>Activity History</h1>
+    <div class="page-sub">Every logged call/email, contact edit, pipeline change, and dismissal, in order. Page loads and background jobs don't appear here - only things a person deliberately did.</div>
+  </header>
+
+  <section class="card">
+    {% if rows %}
+    <table class="school-table">
+      <thead><tr><th>When</th><th>Action</th><th>School</th><th>Detail</th><th>By</th></tr></thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td class="muted small" style="white-space:nowrap;">{{ r.occurred_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td><strong>{{ r.action }}</strong></td>
+          <td>{% if r.school_id %}<a href="/schools/{{ r.school_id }}">{{ r.school_name|title if r.school_name else 'School #' ~ r.school_id }}</a>{% else %}—{% endif %}</td>
+          <td>{{ r.detail or '—' }}</td>
+          <td class="muted small">{{ r.user_name or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="pagination">
+      {% if page > 1 %}
+        <a href="/activity-history?page={{ page - 1 }}">&larr; Prev</a>
+      {% else %}
+        <span class="disabled">&larr; Prev</span>
+      {% endif %}
+      <span class="page-info">Page {{ page }} of {{ total_pages }} &middot; {{ total }} total</span>
+      {% if page < total_pages %}
+        <a href="/activity-history?page={{ page + 1 }}">Next &rarr;</a>
+      {% else %}
+        <span class="disabled">Next &rarr;</span>
+      {% endif %}
+    </div>
+    {% else %}
+    <p class="empty-hint">Nothing logged yet.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

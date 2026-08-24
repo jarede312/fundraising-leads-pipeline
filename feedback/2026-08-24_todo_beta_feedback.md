@@ -3,6 +3,17 @@
 Derived from `2026-09-22_beta_feedback_simulated_rep.md`. Excludes items already fixed in code
 (keyboard shortcuts, snooze black hole — see note at bottom) and the district page request.
 
+## Activity History (2026-08-24, direct user request, not from the feedback doc)
+
+- [x] A "Total Activity History" page/nav link next to Guide: a running log of every
+      human-initiated write on the site (not page loads, not the self-heal regen).
+      *Done: new append-only `audit_log` table (`migrations/013_audit_log.sql`), written to by
+      all nine mutating endpoints (log/correct/delete an activity, add/edit a contact, pipeline
+      stage changes, decision-window edits, Today dismissals) via `queries.log_audit`. New
+      `/activity-history` page, paginated, nav link next to Guide. Verified live: all nine write
+      paths produce a correctly human-readable, correctly school/contact-linked entry, in the
+      right order.*
+
 ## P0 — Trust bugs (days, not weeks)
 
 - [x] **Fix inverted confidence labels** (§5). Relabel by *source*, not internal confidence

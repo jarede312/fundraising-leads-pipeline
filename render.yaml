@@ -2,29 +2,22 @@ services:
   - type: web
     name: fundraising-webapp
     runtime: python
-    pythonVersion: 3.11
     plan: standard
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn webapp.main:app --host 0.0.0.0 --port $PORT
-    routes:
-      - path: /
-        matchType: prefix
     envVars:
       - key: PG_DSN
-        value: ${DATABASE_URL}
-        scope: build,runtime
+        fromDatabase:
+          name: fundraising-db
+          property: connectionString
       - key: ANTHROPIC_API_KEY
-        fromSecret: ANTHROPIC_API_KEY
-        scope: build,runtime
+        sync: false
       - key: LLM_MODEL
         value: claude-opus-5
-        scope: build,runtime
       - key: USER_AGENT
         value: FundraisingProspectEngine/0.1
-        scope: build,runtime
       - key: PYTHONUNBUFFERED
         value: "1"
-        scope: build,runtime
 
 databases:
   - name: fundraising-db

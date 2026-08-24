@@ -5,6 +5,9 @@
   <header class="page-header">
     <h1>Schools</h1>
     <div class="page-sub" id="schools-count">{{ total }} open school{{ 's' if total != 1 else '' }}</div>
+    {% if directory_as_of %}
+    <div class="page-sub muted small">Directory data as of {{ directory_as_of.strftime('%Y-%m-%d') }}</div>
+    {% endif %}
   </header>
 
   <form id="filters" class="filters" hx-get="/schools" hx-target="#results" hx-push-url="true" hx-trigger="change, submit, search">

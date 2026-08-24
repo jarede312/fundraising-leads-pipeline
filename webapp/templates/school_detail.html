@@ -49,12 +49,7 @@
 
   {% include "_contacts_section.html" %}
 
-  <section class="card">
-    <h2>Decision Window</h2>
-    <div class="window-inline">
-      {% include "_window_section.html" %}
-    </div>
-  </section>
+  {% include "_pipeline_section.html" %}
 
   <section class="card">
     <h2>Linked Nonprofit Org (IRS)</h2>
@@ -99,8 +94,13 @@
     {% endif %}
   </section>
 
-  {% include "_pipeline_section.html" %}
-
   {% include "_activity_section.html" %}
+
+  <section class="card">
+    <h2>Decision Window</h2>
+    <div class="window-inline">
+      {% include "_window_section.html" %}
+    </div>
+  </section>
 </div>
 {% endblock %}

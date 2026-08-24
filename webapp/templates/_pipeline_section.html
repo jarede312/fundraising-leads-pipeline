@@ -1,22 +1,30 @@
 <section class="card" id="pipeline-section">
   <h2>Pipeline</h2>
-  {% if school.pipeline_entities %}
-    {% for entity in school.pipeline_entities %}
-    {% set opp = school.opportunities_by_entity.get(entity) %}
-    {% set stage = opp.stage if opp else none %}
+  {% if school.opportunities %}
+    {% for opp in school.opportunities %}
     <div class="pipeline-row">
-      <div class="pipeline-entity">{{ BUYING_ENTITY_LABELS.get(entity, entity) }}</div>
-      <div class="pipeline-stage stage-{{ stage or 'none' }}">
-        {{ STAGE_LABELS.get(stage, 'Not tracked yet') }}
-        {% if opp and opp.amount %}<span class="pipeline-amount">${{ '{:,.0f}'.format(opp.amount) }}</span>{% endif %}
+      <div class="pipeline-entity">
+        {% if opp.contact_id %}
+          {{ opp.contact_first_name }} {{ opp.contact_last_name }}
+          <span class="muted small">({{ ROLE_LABELS.get(opp.contact_role, opp.contact_role) }})</span>
+        {% else %}
+          {{ BUYING_ENTITY_LABELS.get(opp.buying_entity, opp.buying_entity) }}
+          <span class="muted small">(no contact tied yet)</span>
+        {% endif %}
       </div>
+      <div class="pipeline-stage stage-{{ opp.stage }}">
+        {{ STAGE_LABELS.get(opp.stage, opp.stage) }}
+        {% if opp.amount %}<span class="pipeline-amount">${{ '{:,.0f}'.format(opp.amount) }}</span>{% endif %}
+      </div>
+      <div class="muted small pipeline-date">Since {{ opp.created_at.strftime('%Y-%m-%d') }}</div>
       <div class="pipeline-actions">
-        {% for next_stage in STAGE_NEXT.get(stage, []) %}
+        {% for next_stage in STAGE_NEXT.get(opp.stage, []) %}
           {% if next_stage == 'closed_won' %}
           <details class="inline-add">
             <summary class="add-link small">Won</summary>
             <form class="inline-add-form" hx-post="/schools/{{ school.id }}/opportunities" hx-target="#pipeline-section" hx-swap="outerHTML">
-              <input type="hidden" name="buying_entity" value="{{ entity }}">
+              <input type="hidden" name="buying_entity" value="{{ opp.buying_entity }}">
+              {% if opp.contact_id %}<input type="hidden" name="contact_id" value="{{ opp.contact_id }}">{% endif %}
               <input type="hidden" name="stage" value="closed_won">
               <input type="number" name="amount" step="0.01" min="0" placeholder="Amount $" required autofocus>
               <button type="submit">Save</button>
@@ -25,7 +33,7 @@
           {% else %}
           <button type="button" class="pipeline-btn pipeline-btn-{{ next_stage }}"
             hx-post="/schools/{{ school.id }}/opportunities"
-            hx-vals='{"buying_entity": "{{ entity }}", "stage": "{{ next_stage }}"}'
+            hx-vals='{"buying_entity": "{{ opp.buying_entity }}"{% if opp.contact_id %}, "contact_id": {{ opp.contact_id }}{% endif %}, "stage": "{{ next_stage }}"}'
             hx-target="#pipeline-section" hx-swap="outerHTML">{{ STAGE_LABELS.get(next_stage, next_stage) }}</button>
           {% endif %}
         {% endfor %}
@@ -33,6 +41,6 @@
     </div>
     {% endfor %}
   {% else %}
-    <p class="empty-hint">Nothing tracked as a deal yet. Once a contact shows real interest, mark it above to start tracking.</p>
+    <p class="empty-hint">Nothing tracked as a deal yet. Once a contact shows real interest, use "+ Track as opportunity" on their card above to start one.</p>
   {% endif %}
 </section>

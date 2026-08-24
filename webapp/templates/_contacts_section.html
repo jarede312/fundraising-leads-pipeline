@@ -1,5 +1,8 @@
-{% from "macros.html" import conf_badge, log_buttons %}
-<section class="card" id="contacts-section">
+{% from "macros.html" import conf_badge, log_buttons, role_group %}
+{# oob: set when this is included as an out-of-band update inside another endpoint's
+   response (see _pipeline_response.html) rather than being the primary swap target -
+   same template either way, just with the extra attribute htmx needs to route it. #}
+<section class="card" id="contacts-section"{% if oob %} hx-swap-oob="true"{% endif %}>
   <h2>Contacts</h2>
 
   <div class="contact-card office-card">
@@ -20,69 +23,34 @@
        keyboard shortcuts (c/l/e/v/m) log against this card specifically, so its
        buttons are the ones that show the key hint in their tooltip. See app.js. #}
     {{ log_buttons(school.id, None, 'office', default_entity=school.default_buying_entity, compact=True, show_shortcut_hint=True) }}
+    {# No specific person to tie this to - tracks against whichever entity is picked
+       above instead of a contact. Use this when the relationship isn't with one named
+       person yet (e.g. "the PTO in general"); once you know who runs it, track the
+       opportunity from their own contact card instead so it carries their name. #}
+    <button type="button" class="pipeline-start-btn"
+      hx-post="/schools/{{ school.id }}/opportunities"
+      hx-include="#entity-office"
+      hx-vals='{"stage": "interested"}'
+      hx-target="#pipeline-section" hx-swap="outerHTML">+ Track as opportunity</button>
   </div>
 
   {% if school.contacts %}
-    {% for role in ROLE_PRIORITY %}
-      {% if role in contacts_by_role %}
-      <div class="role-group">
-        <h3>{{ ROLE_LABELS.get(role, role) }}</h3>
-        {% for c in contacts_by_role[role] %}
-        <div class="contact-card">
-          <div class="contact-name">
-            {{ c.first_name }} {{ c.last_name }}
-            {% if c.other_roles %}
-              <span class="muted small">(also listed as {{ c.other_roles|map('replace', '_', ' ')|map('title')|join(', ') }})</span>
-            {% endif %}
-          </div>
-          {% if c.role_detail %}<div class="muted small">{{ c.role_detail }}</div>{% endif %}
-
-          {% for m in c.methods %}
-          <div class="contact-method">
-            <div class="contact-fields">
-              {% if m.email %}
-                <span class="field-item"><span class="field-icon">&#9993;</span><span><a href="mailto:{{ m.email }}">{{ m.email }}</a></span></span>
-              {% else %}
-                <details class="inline-add">
-                  <summary class="add-link">+ Add email</summary>
-                  <form class="inline-add-form" hx-patch="/contacts/{{ m.id }}" hx-target="#contacts-section" hx-swap="outerHTML">
-                    <input type="hidden" name="school_id" value="{{ school.id }}">
-                    <input type="email" name="email" placeholder="email@school.org" required autofocus>
-                    <button type="submit">Save</button>
-                  </form>
-                </details>
-              {% endif %}
-              {% if m.phone %}
-                <span class="field-item"><span class="field-icon">&#9742;</span><span class="phone-num"><a href="tel:{{ m.phone }}">{{ m.phone|phone }}</a>{{ ' x' + m.phone_ext if m.phone_ext }}</span></span>
-              {% else %}
-                <details class="inline-add">
-                  <summary class="add-link">+ Add phone</summary>
-                  <form class="inline-add-form" hx-patch="/contacts/{{ m.id }}" hx-target="#contacts-section" hx-swap="outerHTML">
-                    <input type="hidden" name="school_id" value="{{ school.id }}">
-                    <input type="tel" name="phone" placeholder="(701) 555-0100" required autofocus>
-                    <button type="submit">Save</button>
-                  </form>
-                </details>
-              {% endif %}
-              {{ conf_badge(m.email_source, m.email_confidence, m.last_verified_method) }}
-            </div>
-            <div class="muted small">
-              {% if m.last_verified_at %}
-                Verified {{ m.last_verified_at.strftime('%Y-%m-%d') }} via {{ m.last_verified_method or 'unknown method' }}
-              {% else %}
-                Never verified &middot; source: {{ m.email_source }}
-              {% endif %}
-              {% if m.source_url %} &middot; <a href="{{ m.source_url }}" target="_blank" rel="noopener">View source &#8599;</a>{% endif %}
-            </div>
-          </div>
-          {% endfor %}
-
-          {{ log_buttons(school.id, c.id, 'c' ~ c.id, default_entity=c.default_entity, compact=True, show_entity_picker=False) }}
-        </div>
-        {% endfor %}
-      </div>
-      {% endif %}
+    {% set present_roles = ROLE_PRIORITY|select('in', contacts_by_role)|list %}
+    {% for role in present_roles[:2] %}
+      {{ role_group(role, contacts_by_role, school.id, school.opportunity_by_contact_id) }}
     {% endfor %}
+    {# Beyond the top two roles (by ROLE_PRIORITY - PTO/booster first, then front-office
+       roles), collapse the rest under one disclosure instead of a long scroll of contact
+       cards - 28 open schools have more than six contacts on file (feedback §8). #}
+    {% if present_roles|length > 2 %}
+    {% set hidden_roles = present_roles[2:] %}
+    <details class="inline-add more-contacts">
+      <summary class="add-link">+ {{ hidden_roles|length }} more contact group{{ 's' if hidden_roles|length != 1 }} ({{ hidden_roles|map('replace', '_', ' ')|map('title')|join(', ') }})</summary>
+      {% for role in hidden_roles %}
+        {{ role_group(role, contacts_by_role, school.id, school.opportunity_by_contact_id) }}
+      {% endfor %}
+    </details>
+    {% endif %}
   {% else %}
     <p class="empty-hint">No named contacts on file for this school yet.</p>
   {% endif %}

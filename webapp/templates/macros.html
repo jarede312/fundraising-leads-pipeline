@@ -20,6 +20,76 @@
 <span class="conf-badge {{ cls }}" title="{{ label }}"><span class="conf-dot"></span>{{ label }}</span>
 {%- endmacro %}
 
+{% macro role_group(role, contacts_by_role, school_id, opportunity_by_contact_id={}) %}
+<div class="role-group">
+  <h3>{{ ROLE_LABELS.get(role, role) }}</h3>
+  {% for c in contacts_by_role[role] %}
+  {% set opp = opportunity_by_contact_id.get(c.id) %}
+  <div class="contact-card">
+    <div class="contact-name">
+      {{ c.first_name }} {{ c.last_name }}
+      {% if c.other_roles %}
+        <span class="muted small">(also listed as {{ c.other_roles|map('replace', '_', ' ')|map('title')|join(', ') }})</span>
+      {% endif %}
+      {% if opp %}
+        <span class="pipeline-stage stage-{{ opp.stage }}" title="Tracked as an opportunity - see Pipeline below">{{ STAGE_LABELS.get(opp.stage, opp.stage) }}{% if opp.amount %} &middot; ${{ '{:,.0f}'.format(opp.amount) }}{% endif %}</span>
+      {% endif %}
+    </div>
+    {% if c.role_detail %}<div class="muted small">{{ c.role_detail }}</div>{% endif %}
+
+    {% for m in c.methods %}
+    <div class="contact-method">
+      <div class="contact-fields">
+        {% if m.email %}
+          <span class="field-item"><span class="field-icon">&#9993;</span><span><a href="mailto:{{ m.email }}">{{ m.email }}</a></span></span>
+        {% else %}
+          <details class="inline-add">
+            <summary class="add-link">+ Add email</summary>
+            <form class="inline-add-form" hx-patch="/contacts/{{ m.id }}" hx-target="#contacts-section" hx-swap="outerHTML">
+              <input type="hidden" name="school_id" value="{{ school_id }}">
+              <input type="email" name="email" placeholder="email@school.org" required autofocus>
+              <button type="submit">Save</button>
+            </form>
+          </details>
+        {% endif %}
+        {% if m.phone %}
+          <span class="field-item"><span class="field-icon">&#9742;</span><span class="phone-num"><a href="tel:{{ m.phone }}">{{ m.phone|phone }}</a>{{ ' x' + m.phone_ext if m.phone_ext }}</span></span>
+        {% else %}
+          <details class="inline-add">
+            <summary class="add-link">+ Add phone</summary>
+            <form class="inline-add-form" hx-patch="/contacts/{{ m.id }}" hx-target="#contacts-section" hx-swap="outerHTML">
+              <input type="hidden" name="school_id" value="{{ school_id }}">
+              <input type="tel" name="phone" placeholder="(701) 555-0100" required autofocus>
+              <button type="submit">Save</button>
+            </form>
+          </details>
+        {% endif %}
+        {{ conf_badge(m.email_source, m.email_confidence, m.last_verified_method) }}
+      </div>
+      <div class="muted small">
+        {% if m.last_verified_at %}
+          Verified {{ m.last_verified_at.strftime('%Y-%m-%d') }} via {{ m.last_verified_method or 'unknown method' }}
+        {% else %}
+          Never verified &middot; source: {{ m.email_source }}
+        {% endif %}
+        {% if m.source_url %} &middot; <a href="{{ m.source_url }}" target="_blank" rel="noopener">View source &#8599;</a>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+    {{ log_buttons(school_id, c.id, 'c' ~ c.id, default_entity=c.default_entity, compact=True, show_entity_picker=False) }}
+
+    {% if not opp or opp.stage in ('closed_won', 'closed_lost') %}
+    <button type="button" class="pipeline-start-btn"
+      hx-post="/schools/{{ school_id }}/opportunities"
+      hx-vals='{"buying_entity": "{{ c.default_entity }}", "contact_id": {{ c.id }}, "stage": "interested"}'
+      hx-target="#pipeline-section" hx-swap="outerHTML">+ Track as opportunity</button>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
 {% macro window_pill(status, label) -%}
 {% set cls = {'in_window': 'win-open', 'upcoming': 'win-upcoming', 'passed': 'win-passed', 'none': 'win-none'}.get(status, 'win-none') %}
 <span class="win-pill {{ cls }}">{{ label }}</span>

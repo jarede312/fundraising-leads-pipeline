@@ -401,6 +401,18 @@ def _build_where(filters: dict):
     return where, params
 
 
+def get_directory_freshness(conn):
+    """Most recent successful state-directory ingest, for the 'Directory data as of...'
+    note (feedback §8: 'nothing tells me the data's age... a directory pulled two years
+    ago is a liability'). None if it's never been run."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT max(started_at) AS d FROM ingest_runs WHERE source = 'state_doe' AND status = 'ok'"
+        )
+        row = cur.fetchone()
+    return row["d"] if row else None
+
+
 def list_schools(conn, filters: dict, sort: str, sort_dir: str, page: int, page_size: int):
     where, params = _build_where(filters)
     sort_sql = SORT_COLUMNS.get(sort, "sc.score")
@@ -503,6 +515,46 @@ def queue_school_at(conn, filters: dict, sort: str, sort_dir: str, pos: int):
     return (row["id"] if row else None), total
 
 
+def school_position(conn, filters: dict, sort: str, sort_dir: str, school_id: int):
+    """Where `school_id` currently sits (0-indexed) in the same ordered, filtered set
+    queue_school_at/list_schools would show, or None if it isn't in that set any more.
+
+    Queue mode's Next/Previous used to just add/subtract 1 from the position number
+    baked into the link when it was rendered - fine until logging an action on the
+    current school (e.g. a call, which updates last_activity_at) changes where *that
+    same school* sorts under something like "Last Activity". The set had already
+    reordered under the rep by the time they clicked Next, so the old fixed position
+    could point at a school that got skipped, or the one just logged, again. Resolving
+    the anchor school's position fresh on every Next/Previous click (see /queue in
+    main.py) means "next" always means the school after this one *right now*, however
+    the sort just moved - see feedback §8."""
+    where, params = _build_where(filters)
+    sort_sql = SORT_COLUMNS.get(sort, "sc.score")
+    dir_sql = "ASC" if sort_dir == "asc" else "DESC"
+
+    sql = f"""
+        SELECT pos FROM (
+            SELECT s.id,
+                   row_number() OVER (ORDER BY {sort_sql} {dir_sql} NULLS LAST, s.name ASC) - 1 AS pos
+            FROM schools s
+            LEFT JOIN districts d ON d.id = s.district_id
+            LEFT JOIN LATERAL (
+                SELECT score, rationale FROM scores
+                WHERE school_id = s.id ORDER BY generated_at DESC LIMIT 1
+            ) sc ON true
+            LEFT JOIN LATERAL (
+                SELECT max(occurred_at) AS last_activity_at FROM rep_actions WHERE school_id = s.id
+            ) la ON true
+            WHERE {' AND '.join(where)}
+        ) ranked
+        WHERE id = %(school_id)s
+    """
+    with conn.cursor() as cur:
+        cur.execute(sql, {**params, "school_id": school_id})
+        row = cur.fetchone()
+    return row["pos"] if row else None
+
+
 def get_school_detail(conn, school_id: int):
     with conn.cursor() as cur:
         cur.execute(
@@ -563,15 +615,15 @@ def get_school_detail(conn, school_id: int):
 
     school["buying_windows"] = get_buying_windows(conn, school_id)
     school["activity_groups"] = get_activity_grouped(conn, school_id)
-    school["opportunities_by_entity"] = get_opportunities_by_entity(conn, school_id)
+    school["opportunities"] = get_opportunities(conn, school_id)
     school["default_buying_entity"] = get_default_buying_entity(
         conn, school_id, school["contacts"]
     )
-    # Entities worth showing a Pipeline row for: anything ever logged against, or
-    # already tracked as an opportunity - same "don't show a relationship that's never
-    # existed" rule Activity's own grouping already follows.
-    touched_entities = {e for e, _ in school["activity_groups"]} | set(school["opportunities_by_entity"])
-    school["pipeline_entities"] = [e for e in BUYING_ENTITY_ORDER if e in touched_entities]
+    # So each contact card can show its own current pipeline status (and hide its
+    # "Mark Interested" starter once tracked) without a second query per card.
+    school["opportunity_by_contact_id"] = {
+        o["contact_id"]: o for o in school["opportunities"] if o["contact_id"]
+    }
 
     return school
 
@@ -944,37 +996,51 @@ def update_buying_window(conn, window_id: int, season, start_month, start_day,
 # Pipeline (§9 items 1/2): "record a sale" + a real opportunity, not just a call log.
 # =============================================================================
 
-def get_opportunities_by_entity(conn, school_id: int) -> dict:
-    """One row per buying_entity that has ever had an opportunity at this school - the
-    currently open one if there is one, else the most recently closed. DISTINCT ON's
-    ORDER BY does the picking: '(stage not closed) DESC' puts an open row first when
-    one exists, ties broken by most recently touched."""
+def get_opportunities(conn, school_id: int) -> list:
+    """Every opportunity relationship at this school, one row per named contact that's
+    ever been tracked plus one per buying_entity tracked with no specific contact (the
+    General/Front Office card's entity picker) - the currently open one where there is
+    one, else the most recently closed. A music teacher and a principal can each carry
+    their own concurrent deal even though both default to the same 'school_admin'
+    buying_entity for logging purposes (see migrations/012's header comment for why
+    that coarse bucket wasn't enough on its own).
+
+    DISTINCT ON's grouping key mirrors the two partial unique indexes on the table:
+    contact_id when set, else (buying_entity, no contact). ORDER BY's
+    '(stage not closed) DESC' picks the open row over a closed one when both exist."""
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT DISTINCT ON (buying_entity) *
-            FROM opportunities
-            WHERE school_id = %(id)s
-            ORDER BY buying_entity, (stage NOT IN ('closed_won','closed_lost')) DESC, updated_at DESC
+            SELECT DISTINCT ON (coalesce(o.contact_id::text, 'entity:' || o.buying_entity))
+                o.*, c.first_name AS contact_first_name, c.last_name AS contact_last_name,
+                c.role AS contact_role
+            FROM opportunities o
+            LEFT JOIN contacts c ON c.id = o.contact_id
+            WHERE o.school_id = %(id)s
+            ORDER BY coalesce(o.contact_id::text, 'entity:' || o.buying_entity),
+                     (o.stage NOT IN ('closed_won','closed_lost')) DESC, o.updated_at DESC
             """,
             {"id": school_id},
         )
-        return {r["buying_entity"]: r for r in cur.fetchall()}
+        return cur.fetchall()
 
 
 def upsert_opportunity(conn, org_id, user_id, school_id: int, buying_entity: str,
-                        stage: str, amount, notes: str | None) -> int:
-    """Advances the one open opportunity for (school, entity) to `stage`, or starts a
-    new one if none is currently open - a rep can jump straight to Won/Lost without
-    ever passing through Interested/Proposal Out, for a fast sale. amount/notes only
-    overwrite what's stored when actually provided (coalesce), so marking Lost doesn't
-    blank out an amount entered when the proposal went out.
+                        contact_id, stage: str, amount, notes: str | None) -> int:
+    """Advances the one open opportunity for this contact (or, with no contact given,
+    for the (school, entity) pair) to `stage`, or starts a new one if none is currently
+    open - a rep can jump straight to Won/Lost without ever passing through
+    Interested/Proposal Out, for a fast sale. amount/notes only overwrite what's stored
+    when actually provided (coalesce), so marking Lost doesn't blank out an amount
+    entered when the proposal went out.
 
     Does not commit: the caller pairs this with a matching rep_action on a close (see
     /schools/{id}/opportunities in main.py), same reason log_action doesn't commit."""
+    match_sql = "contact_id = %(contact_id)s" if contact_id is not None else \
+        "contact_id IS NULL AND buying_entity = %(buying_entity)s"
     with conn.cursor() as cur:
         cur.execute(
-            """
+            f"""
             UPDATE opportunities
             SET stage = %(stage)s,
                 amount = coalesce(%(amount)s, amount),
@@ -982,12 +1048,12 @@ def upsert_opportunity(conn, org_id, user_id, school_id: int, buying_entity: str
                 updated_at = now(),
                 closed_at = CASE WHEN %(stage)s IN ('closed_won','closed_lost')
                                  THEN now() ELSE closed_at END
-            WHERE school_id = %(school_id)s AND buying_entity = %(buying_entity)s
+            WHERE school_id = %(school_id)s AND {match_sql}
               AND stage NOT IN ('closed_won','closed_lost')
             RETURNING id
             """,
-            dict(stage=stage, amount=amount, notes=notes,
-                 school_id=school_id, buying_entity=buying_entity),
+            dict(stage=stage, amount=amount, notes=notes, school_id=school_id,
+                 buying_entity=buying_entity, contact_id=contact_id),
         )
         row = cur.fetchone()
         if row is not None:
@@ -996,14 +1062,16 @@ def upsert_opportunity(conn, org_id, user_id, school_id: int, buying_entity: str
         cur.execute(
             """
             INSERT INTO opportunities
-                (org_id, school_id, buying_entity, stage, amount, notes, created_by, closed_at)
-            VALUES (%(org_id)s, %(school_id)s, %(buying_entity)s, %(stage)s, %(amount)s, %(notes)s,
-                    %(user_id)s,
+                (org_id, school_id, buying_entity, contact_id, stage, amount, notes,
+                 created_by, closed_at)
+            VALUES (%(org_id)s, %(school_id)s, %(buying_entity)s, %(contact_id)s,
+                    %(stage)s, %(amount)s, %(notes)s, %(user_id)s,
                     CASE WHEN %(stage)s IN ('closed_won','closed_lost') THEN now() END)
             RETURNING id
             """,
             dict(org_id=org_id, school_id=school_id, buying_entity=buying_entity,
-                 stage=stage, amount=amount, notes=notes, user_id=user_id),
+                 contact_id=contact_id, stage=stage, amount=amount, notes=notes,
+                 user_id=user_id),
         )
         return cur.fetchone()["id"]
 
@@ -1017,9 +1085,11 @@ def list_open_opportunities(conn):
         cur.execute(
             """
             SELECT o.id, o.school_id, s.name AS school_name, s.segment,
-                   o.buying_entity, o.stage, o.amount, o.updated_at
+                   o.buying_entity, o.contact_id, o.stage, o.amount, o.created_at, o.updated_at,
+                   c.first_name AS contact_first_name, c.last_name AS contact_last_name
             FROM opportunities o
             JOIN schools s ON s.id = o.school_id
+            LEFT JOIN contacts c ON c.id = o.contact_id
             WHERE o.stage NOT IN ('closed_won', 'closed_lost')
             ORDER BY CASE o.stage WHEN 'proposal_out' THEN 0 ELSE 1 END, o.updated_at DESC
             """

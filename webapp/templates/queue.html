@@ -7,12 +7,12 @@
     <span class="queue-pos">School {{ pos + 1 }} of {{ total }}</span>
     <div class="queue-nav">
       {% if pos > 0 %}
-        <a class="queue-nav-btn" href="/queue?{{ build_qs(qs_state, {'pos': pos - 1}) }}">&larr; Previous</a>
+        <a class="queue-nav-btn" href="/queue?{{ build_qs(qs_state, {'pos': pos - 1, 'prev_of': school.id}) }}">&larr; Previous</a>
       {% else %}
         <span class="queue-nav-btn disabled">&larr; Previous</span>
       {% endif %}
       {% if pos + 1 < total %}
-        <a class="queue-nav-btn" id="queue-next" href="/queue?{{ build_qs(qs_state, {'pos': pos + 1}) }}">Next &rarr;</a>
+        <a class="queue-nav-btn" id="queue-next" href="/queue?{{ build_qs(qs_state, {'pos': pos + 1, 'next_of': school.id}) }}">Next &rarr;</a>
       {% else %}
         <span class="queue-nav-btn disabled">Next &rarr;</span>
       {% endif %}
@@ -45,12 +45,13 @@
   </header>
 
   {% include "_contacts_section.html" %}
+  {% include "_pipeline_section.html" %}
+  {% include "_activity_section.html" %}
   <section class="card">
     <h2>Decision Window</h2>
     <div class="window-inline">
       {% include "_window_section.html" %}
     </div>
   </section>
-  {% include "_activity_section.html" %}
 </div>
 {% endblock %}

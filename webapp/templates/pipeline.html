@@ -72,15 +72,24 @@
     <h2>Open deals</h2>
     {% if opportunities %}
     <table class="school-table">
-      <thead><tr><th>School</th><th>Segment</th><th>Entity</th><th>Stage</th><th>Amount</th><th>Updated</th></tr></thead>
+      <thead><tr><th>School</th><th>Segment</th><th>Contact / Entity</th><th>Stage</th><th>Amount</th><th>Since</th><th>Updated</th></tr></thead>
       <tbody>
         {% for o in opportunities %}
         <tr>
           <td><a href="/schools/{{ o.school_id }}">{{ o.school_name|title }}</a></td>
           <td>{{ o.segment|capitalize if o.segment else '—' }}</td>
-          <td>{{ BUYING_ENTITY_LABELS.get(o.buying_entity, o.buying_entity) }}</td>
+          <td>
+            {% if o.contact_id %}
+              {{ o.contact_first_name }} {{ o.contact_last_name }}
+              <span class="muted small">({{ BUYING_ENTITY_LABELS.get(o.buying_entity, o.buying_entity) }})</span>
+            {% else %}
+              {{ BUYING_ENTITY_LABELS.get(o.buying_entity, o.buying_entity) }}
+              <span class="muted small">(no contact)</span>
+            {% endif %}
+          </td>
           <td><span class="pipeline-stage stage-{{ o.stage }}">{{ STAGE_LABELS.get(o.stage, o.stage) }}</span></td>
           <td class="num">{% if o.amount %}${{ '{:,.0f}'.format(o.amount) }}{% else %}—{% endif %}</td>
+          <td>{{ o.created_at.strftime('%Y-%m-%d') }}</td>
           <td>{{ o.updated_at.strftime('%Y-%m-%d') }}</td>
         </tr>
         {% endfor %}

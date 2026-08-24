@@ -1,3 +1,5 @@
+import csv
+import io
 import logging
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -6,7 +8,7 @@ from urllib.parse import urlencode
 import psycopg
 from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -281,6 +283,7 @@ def school_list(
         "page": page, "total_pages": total_pages, "page_size": PAGE_SIZE,
         "sort": sort, "dir": dir, "filters": filters, "qs_state": qs_state,
         "segments": queries.SEGMENTS,
+        "directory_as_of": queries.get_directory_freshness(conn),
         # The header count lives outside #results, so on a filter swap it has to be
         # updated out-of-band or it keeps reading "557 open schools" over a table
         # showing 18. Only emitted on the htmx path - on a full render the header
@@ -289,6 +292,46 @@ def school_list(
     }
     template = "_school_table.html" if is_htmx else "school_list.html"
     return templates.TemplateResponse(request, template, ctx)
+
+
+# Large enough to be "all of them" at this scale (573 schools) without a second query
+# shape just for export - see list_schools' own docstring on why a live re-query
+# instead of a snapshot is fine here. Revisit if/when this expands past one state.
+EXPORT_PAGE_SIZE = 10_000
+
+
+@app.get("/schools/export.csv")
+def export_schools_csv(
+    filters: dict = Depends(filter_params),
+    sort: str = "score",
+    dir: str = "desc",
+    conn=Depends(get_conn),
+):
+    rows, _ = queries.list_schools(conn, filters, sort, dir, 1, EXPORT_PAGE_SIZE)
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([
+        "School", "District", "City", "State", "Segment", "Enrollment",
+        "Score", "Tier", "Last Activity",
+        "Best Contact", "Contact Role", "Contact Confidence",
+    ])
+    for r in rows:
+        tier = queries.score_tier(r["score"])
+        writer.writerow([
+            r["name"], r["district_name"] or "", r["city"] or "", r["state_code"],
+            r["segment"] or "", r["enrollment"] if r["enrollment"] is not None else "",
+            f"{r['score']:.2f}" if r["score"] is not None else "",
+            tier[0] if tier else "",
+            r["last_activity_at"].strftime("%Y-%m-%d") if r["last_activity_at"] else "",
+            f"{r['contact_first_name']} {r['contact_last_name']}" if r["contact_first_name"] else "",
+            queries.ROLE_LABELS.get(r["contact_role"], r["contact_role"] or ""),
+            r["contact_email_confidence"] or "",
+        ])
+    buf.seek(0)
+    return StreamingResponse(
+        iter([buf.getvalue()]), media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="prospect_engine_schools.csv"'},
+    )
 
 
 @app.get("/schools/{school_id}", response_class=HTMLResponse)
@@ -306,8 +349,23 @@ def queue(
     sort: str = "score",
     dir: str = "desc",
     pos: int = Query(0, ge=0),
+    next_of: int | None = Query(None),
+    prev_of: int | None = Query(None),
     conn=Depends(get_conn),
 ):
+    # Next/Previous re-anchor on the school just being looked at rather than trusting
+    # the pos number from before whatever action was just logged - see
+    # queries.school_position for why. Falls back to the raw pos (old behavior) if the
+    # anchor school dropped out of the current filtered set entirely.
+    if next_of is not None:
+        anchor = queries.school_position(conn, filters, sort, dir, next_of)
+        if anchor is not None:
+            pos = anchor + 1
+    elif prev_of is not None:
+        anchor = queries.school_position(conn, filters, sort, dir, prev_of)
+        if anchor is not None:
+            pos = max(0, anchor - 1)
+
     school_id, total = queries.queue_school_at(conn, filters, sort, dir, pos)
     qs_state = {**filters, "sort": sort, "dir": dir, "pos": pos}
 
@@ -462,6 +520,7 @@ def create_or_advance_opportunity(
     school_id: int,
     buying_entity: str = Form(...),
     stage: str = Form(...),
+    contact_id: int | None = Form(None),
     amount: str = Form(""),
     notes: str = Form(""),
     conn=Depends(get_conn),
@@ -472,6 +531,8 @@ def create_or_advance_opportunity(
         raise HTTPException(400, "Unknown buying entity.")
     if stage not in queries.STAGE_LABELS:
         raise HTTPException(400, "Unknown pipeline stage.")
+    if contact_id is not None and queries.contact_school_id(conn, contact_id) != school_id:
+        raise HTTPException(400, "That contact doesn't belong to this school.")
 
     parsed_amount = None
     if amount.strip():
@@ -484,7 +545,7 @@ def create_or_advance_opportunity(
 
     org_id, user_id = queries.get_default_org_user(conn)
     queries.upsert_opportunity(
-        conn, org_id, user_id, school_id, buying_entity, stage,
+        conn, org_id, user_id, school_id, buying_entity, contact_id, stage,
         parsed_amount, notes.strip() or None,
     )
     # A close is a real, historically-meaningful event worth its own timeline entry,
@@ -495,21 +556,13 @@ def create_or_advance_opportunity(
         if parsed_amount is not None:
             close_note += f" (${parsed_amount:,.2f})"
         queries.log_action(
-            conn, org_id, user_id, school_id, None, buying_entity,
+            conn, org_id, user_id, school_id, contact_id, buying_entity,
             None, None, close_note, action_type=action_type,
         )
     conn.commit()
 
-    school = {
-        "id": school_id,
-        "opportunities_by_entity": queries.get_opportunities_by_entity(conn, school_id),
-    }
-    activity_groups = queries.get_activity_grouped(conn, school_id)
-    touched = {e for e, _ in activity_groups} | set(school["opportunities_by_entity"])
-    school["pipeline_entities"] = [e for e in queries.BUYING_ENTITY_ORDER if e in touched]
     return templates.TemplateResponse(
-        request, "_pipeline_response.html",
-        {"school": school, "activity_groups": activity_groups},
+        request, "_pipeline_response.html", _contacts_ctx(conn, school_id),
     )
 
 

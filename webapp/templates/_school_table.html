@@ -9,7 +9,8 @@
 {% endif %}
 <div class="results-bar">
   <a class="work-list-btn" href="/queue?{{ build_qs(qs_state, {'pos': 0, 'page': None}) }}">&#9654; Work this list</a>
-  <span class="muted small">Starts a focused, one-school-at-a-time session over these {{ total }} school{{ 's' if total != 1 else '' }}.</span>
+  <a class="export-csv-btn" href="/schools/export.csv?{{ build_qs(qs_state, {'page': None}) }}">&#8681; Export CSV</a>
+  <span class="muted small">Starts a focused, one-school-at-a-time session over these {{ total }} school{{ 's' if total != 1 else '' }}, or export them as a call sheet.</span>
 </div>
 <table class="school-table" id="school-table">
   <thead>

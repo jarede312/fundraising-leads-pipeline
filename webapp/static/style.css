@@ -163,6 +163,8 @@ a:hover { text-decoration: underline; }
 .inline-add-form button:hover { background: #1f4c8f; }
 
 .backdate-add { display: block; margin: 4px 0; }
+.more-contacts { display: block; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.more-contacts > summary { margin-bottom: 4px; }
 .backdate-input {
   display: block; margin-top: 4px; font-size: 12.5px; padding: 4px 7px;
   border: 1px solid var(--border); border-radius: 4px;
@@ -262,6 +264,11 @@ a:hover { text-decoration: underline; }
   border-radius: 6px; background: var(--accent); color: #fff;
 }
 .work-list-btn:hover { background: #1f4c8f; text-decoration: none; }
+.export-csv-btn {
+  display: inline-block; font-size: 13px; font-weight: 700; padding: 6px 14px;
+  border-radius: 6px; border: 1px solid var(--accent); color: var(--accent);
+}
+.export-csv-btn:hover { background: var(--accent-bg); text-decoration: none; }
 
 .queue-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
@@ -305,6 +312,12 @@ a:hover { text-decoration: underline; }
 }
 .top-nav a { color: var(--ink-muted); }
 .top-nav a:hover { color: var(--accent); text-decoration: none; }
+.nav-search { margin-left: auto; }
+.nav-search input {
+  font-size: 12.5px; font-weight: normal; padding: 5px 10px; width: 220px;
+  border: 1px solid var(--border); border-radius: 14px; background: var(--bg); color: var(--ink);
+}
+.nav-search input:focus { outline: none; border-color: var(--accent); background: var(--surface); }
 
 /* ---------- Phase 4: daily priority ---------- */
 .priority-list { list-style: none; margin: 0; padding: 0; max-width: 900px; }
@@ -318,10 +331,10 @@ a:hover { text-decoration: underline; }
 .priority-score { margin-left: auto; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
 .priority-due { font-size: 12px; color: var(--ink-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .priority-score + .priority-due { margin-left: 4px; }
-.priority-reason { margin-top: 6px; font-size: 13px; color: var(--ink-muted); }
-.priority-dismiss { margin-top: 8px; }
-.priority-dismiss summary { cursor: pointer; list-style: none; color: var(--accent); text-decoration: underline; width: fit-content; }
-.priority-dismiss summary::-webkit-details-marker { display: none; }
+/* The reason ("Never contacted", "New principal detected...") is why the rep is
+   calling - it should read at least as prominently as the school name it explains,
+   not as a muted caption underneath it (feedback §8). */
+.priority-reason { margin-top: 6px; font-size: 15px; font-weight: 600; color: var(--ink); }
 .dismiss-options { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 .dismiss-btn {
   font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 10px;
@@ -433,6 +446,13 @@ code {
 }
 .pipeline-btn:hover { border-color: var(--accent); color: var(--accent); }
 .pipeline-btn-closed_lost:hover { border-color: var(--red); color: var(--red); }
+.pipeline-start-btn {
+  display: block; margin-top: 6px; font-size: 11.5px; font-weight: 600;
+  color: var(--accent); background: none; border: none; cursor: pointer; padding: 0;
+}
+.pipeline-start-btn:hover { text-decoration: underline; }
+.pipeline-date { margin-left: 4px; }
+.contact-name .pipeline-stage { margin-left: 8px; font-size: 10.5px; padding: 1px 8px; }
 
 .report-stats { display: flex; gap: 28px; flex-wrap: wrap; margin-bottom: 4px; }
 .report-stat-num { font-size: 26px; font-weight: 800; color: var(--ink); line-height: 1; }

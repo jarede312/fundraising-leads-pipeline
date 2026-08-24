@@ -39,6 +39,11 @@ Derived from `2026-09-22_beta_feedback_simulated_rep.md`. Excludes items already
 
 ## P1 — Build before rollout (weeks)
 
+**Deployed 2026-08-24:** commit `1e6fd4e` pushed to `origin/master` (Render auto-deploys from
+there); `migrations/011_opportunities.sql` applied to the production database beforehand, so the
+new `opportunities` table existed before the code that queries it went live. Same commit also
+carries the P0 fixes above, which had been sitting local-only until this push.
+
 - [x] **Record a sale** (§9 item 1). No button anywhere writes "quoted / won / lost" or a dollar
       amount, even though the schema has slots for it. Without this there's no closed loop.
       *Done, bundled with the pipeline view below (user chose "both" over amount-only) — see
@@ -132,16 +137,73 @@ Derived from `2026-09-22_beta_feedback_simulated_rep.md`. Excludes items already
 
 ## Smaller UI/usability fixes (§8)
 
-- [ ] Today reason text should be larger than (or match) the school name, not smaller.
-- [ ] Make dismiss/snooze inline buttons instead of hidden behind a disclosure triangle.
-- [ ] Collapse contact cards below the top two roles by default on schools with many contacts.
+**Not deployed yet** — built and verified locally 2026-08-24, not yet pushed/migrated to
+production (see the pipeline rework note below; wants to go out together).
+
+- [x] Today reason text should be larger than (or match) the school name, not smaller.
+      *Done: `.priority-reason` bumped from 13px muted to 15px/600-weight, at least as prominent
+      as the school name now.*
+- [x] Make dismiss/snooze inline buttons instead of hidden behind a disclosure triangle.
+      *Done: removed the `<details>`/`<summary>` wrapper in `_priority_list.html`; the four
+      dismiss buttons render directly under the reason line.*
+- [x] Collapse contact cards below the top two roles by default on schools with many contacts.
+      *Done: role-group rendering factored into a `role_group` macro, top 2 roles (by
+      ROLE_PRIORITY) shown expanded, the rest collapsed under one "+N more contact groups"
+      disclosure.*
 - [ ] Replace per-contact logging button clusters with a single bottom-pinned logging bar plus a
       "who did you talk to?" selector.
-- [ ] Add a global search box in the top nav (currently only exists on All Schools).
-- [ ] Fix queue-mode "Next" navigating by list position instead of by school, which can skip or
+      **Not attempted.** The collapse-above mitigates the actual complaint (visual clutter on
+      schools with many contacts) more cheaply. A full redesign risks the keyboard-shortcut
+      workflow (shortcuts currently target specific per-card buttons by `data-scope`) - the
+      rep called that the tool's best feature. Revisit deliberately if the collapse isn't enough.
+- [x] Add a global search box in the top nav (currently only exists on All Schools).
+      *Done: plain (non-htmx) search form in `base.html`'s nav, GETs to `/schools?q=...` from
+      any page.*
+- [x] Fix queue-mode "Next" navigating by list position instead of by school, which can skip or
       repeat a school when the sort reorders after a logged action.
-- [ ] Add CSV print/export for call sheets, without requiring a script.
-- [ ] Show a visible "Directory data as of [date]" freshness indicator.
+      *Done: Next/Previous now pass the currently-viewed school's id as an anchor
+      (`queries.school_position`); the server resolves that school's *current* position fresh on
+      every click instead of trusting a position number computed before the action that just
+      reordered the list. Falls back to the old position if the anchor school drops out of the
+      filtered set entirely.*
+- [x] Add CSV print/export for call sheets, without requiring a script.
+      *Done: `GET /schools/export.csv`, same filters/sort as the current All Schools view, "Export
+      CSV" button next to "Work this list".*
+- [x] Show a visible "Directory data as of [date]" freshness indicator.
+      *Done: latest successful `state_doe` ingest date shown on the All Schools header, from
+      `ingest_runs`.*
+
+---
+
+## Pipeline rework (2026-08-24, user-reported after initial P1 build)
+
+The Pipeline feature shipped in the P1 pass keyed an opportunity by `buying_entity` alone, which
+put every non-PTO/booster contact - principal, music teacher, athletic director, superintendent,
+office manager - into one 'school_admin' bucket (that's `queries.buying_entity_for_contact`'s
+existing behavior, not something this pass introduced, but Pipeline made the coarseness
+consequential for the first time). User feedback: a music-teacher-driven deal showed up
+mislabeled "School Admin" with no way to tell who it was actually with, and only one deal could
+ever be tracked per school across all of those roles combined.
+
+- [x] Tie a pipeline item to the specific contact it's actually with, not just the coarse
+      buying-entity bucket.
+- [x] Support multiple concurrent pipeline items per school (one per contact, e.g. a principal
+      deal and a music-teacher deal open at the same time).
+- [x] Show a date and the contact's name on each pipeline item.
+- [x] Move Decision Window to the bottom of the school page (and queue mode, which was missing
+      the Pipeline card entirely until this pass).
+
+*Done: `migrations/012_opportunities_per_contact.sql` adds `opportunities.contact_id` and
+replaces the single unique index with two - one open deal per named contact, one open deal per
+buying_entity when no contact is attached (the General/Front Office card's entity picker, for a
+relationship not yet tied to a name). Each contact card gained a "+ Track as opportunity" starter
+(hidden once that contact has an open deal, and showing an inline stage badge once tracked); the
+Pipeline card now lists every tracked relationship with the contact's name + role, stage, amount,
+and start date. Verified live: two concurrent opportunities on one school (principal + music
+teacher), correctly independent through to Won: one closed at $2,200 while the other stayed at
+Interested untouched; the Activity timeline entry for the close is now attributed to the specific
+contact by name, which it never was before. Applied to local dev DB only so far - not yet
+migrated/pushed to production.*
 
 ---
 

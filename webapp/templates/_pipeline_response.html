@@ -6,7 +6,14 @@
    already owns #activity-timeline there, and two elements sharing an id would be a
    second bug, not a fix (see _school_table.html's #schools-count for the same rule). #}
 <div id="activity-timeline" hx-swap-oob="true">
-  {% with school_id = school.id %}
+  {% with school_id = school.id, activity_groups = school.activity_groups %}
     {% include "_activity_timeline.html" %}
   {% endwith %}
 </div>
+{# Starting/advancing an opportunity also changes whether a contact card's own "Mark
+   Interested" control should still show (see role_group / the office card) - keep
+   Contacts in sync the same out-of-band way, using the oob flag rather than a wrapper
+   element so there's still only one #contacts-section id in the document. #}
+{% with oob = true %}
+  {% include "_contacts_section.html" %}
+{% endwith %}

@@ -15,6 +15,11 @@
           </span>
         {% endif %}
         {% if a.first_name %}<span class="muted">— {{ a.first_name }} {{ a.last_name }}</span>{% endif %}
+        <button type="button" class="activity-delete"
+          hx-delete="/actions/{{ a.id }}"
+          hx-vals='{"school_id": {{ school_id }}}'
+          hx-confirm="Delete this logged action? This can't be undone, and it may make this school due for a call again."
+          hx-target="#activity-timeline" hx-swap="innerHTML">Delete</button>
       </div>
       {% if a.notes %}
         <div class="muted small activity-note">{{ a.notes }}</div>

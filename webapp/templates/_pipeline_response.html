@@ -1,0 +1,12 @@
+{% include "_pipeline_section.html" %}
+{# Won/Lost also writes a matching rep_action - keep the Activity card in sync via an
+   out-of-band swap rather than making the rep reload to see their own close reflected
+   in the timeline. Harmless no-op when the stage change wasn't a close. Only emitted
+   here (the htmx fragment response), never on the full-page render - _activity_section.html
+   already owns #activity-timeline there, and two elements sharing an id would be a
+   second bug, not a fix (see _school_table.html's #schools-count for the same rule). #}
+<div id="activity-timeline" hx-swap-oob="true">
+  {% with school_id = school.id %}
+    {% include "_activity_timeline.html" %}
+  {% endwith %}
+</div>

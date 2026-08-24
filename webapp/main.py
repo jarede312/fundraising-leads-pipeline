@@ -1,5 +1,5 @@
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlencode
 
@@ -65,7 +65,10 @@ templates.env.globals["OUTCOME_OPTIONS_BY_CHANNEL"] = queries.OUTCOME_OPTIONS_BY
 templates.env.globals["BUYING_ENTITY_LABELS"] = queries.BUYING_ENTITY_LABELS
 templates.env.globals["BUYING_ENTITY_ORDER"] = queries.BUYING_ENTITY_ORDER
 templates.env.globals["SCORE_METHODOLOGY"] = queries.SCORE_METHODOLOGY
+templates.env.globals["STAGE_LABELS"] = queries.STAGE_LABELS
+templates.env.globals["STAGE_NEXT"] = queries.STAGE_NEXT
 templates.env.filters["phone"] = format_phone
+templates.env.filters["score_tier"] = queries.score_tier
 
 PAGE_SIZE = 50
 
@@ -334,6 +337,7 @@ def create_action(
     notes: str = Form(""),
     needs_follow_up: bool = Form(False),
     follow_up_date: str = Form(""),
+    occurred_at: str = Form(""),
     conn=Depends(get_conn),
 ):
     # Everything that can be rejected is rejected before anything is written. The
@@ -351,6 +355,19 @@ def create_action(
     if contact_id is not None and queries.contact_school_id(conn, contact_id) != school_id:
         raise HTTPException(400, "That contact doesn't belong to this school.")
 
+    # Back-dating (§4.5): a rep logging from the car or that night should be able to
+    # say when the call actually happened, not just accept the click timestamp. Blank
+    # (the default) means "now", handled in queries.log_action. A future timestamp is
+    # rejected - a call can't have happened yet.
+    logged_at = None
+    if occurred_at.strip():
+        try:
+            logged_at = datetime.fromisoformat(occurred_at.strip())
+        except ValueError:
+            raise HTTPException(400, "That activity date/time isn't valid.")
+        if logged_at > datetime.now() + timedelta(minutes=5):
+            raise HTTPException(400, "Activity can't be logged in the future.")
+
     due = None
     if needs_follow_up:
         if follow_up_date.strip():
@@ -365,6 +382,7 @@ def create_action(
     queries.log_action(
         conn, org_id, user_id, school_id, contact_id,
         buying_entity, channel, outcome or None, notes.strip() or None,
+        occurred_at=logged_at,
     )
     if due is not None:
         queries.set_manual_follow_up(
@@ -413,6 +431,101 @@ def patch_action_notes(
     return templates.TemplateResponse(
         request, "_activity_timeline.html",
         {"activity_groups": groups, "school_id": school_id},
+    )
+
+
+@app.delete("/actions/{action_id}", response_class=HTMLResponse)
+def delete_action(
+    request: Request,
+    action_id: int,
+    school_id: int = Form(...),
+    conn=Depends(get_conn),
+):
+    if not queries.delete_action(conn, action_id, school_id):
+        raise HTTPException(404, "That activity entry no longer exists.")
+    groups = queries.get_activity_grouped(conn, school_id)
+    return templates.TemplateResponse(
+        request, "_activity_timeline.html",
+        {"activity_groups": groups, "school_id": school_id},
+    )
+
+
+# action_type a pipeline stage change also gets logged as, so a win/loss shows up in
+# the Activity timeline too - Interested/Proposal Out are pipeline-internal judgment
+# calls, not a contact event, so they don't get a matching rep_action.
+OPPORTUNITY_ACTION_TYPE = {"closed_won": "won", "closed_lost": "lost"}
+
+
+@app.post("/schools/{school_id}/opportunities", response_class=HTMLResponse)
+def create_or_advance_opportunity(
+    request: Request,
+    school_id: int,
+    buying_entity: str = Form(...),
+    stage: str = Form(...),
+    amount: str = Form(""),
+    notes: str = Form(""),
+    conn=Depends(get_conn),
+):
+    if not queries.school_exists(conn, school_id):
+        raise HTTPException(404, "No school with that id.")
+    if buying_entity not in queries.BUYING_ENTITY_LABELS:
+        raise HTTPException(400, "Unknown buying entity.")
+    if stage not in queries.STAGE_LABELS:
+        raise HTTPException(400, "Unknown pipeline stage.")
+
+    parsed_amount = None
+    if amount.strip():
+        try:
+            parsed_amount = round(float(amount.strip()), 2)
+        except ValueError:
+            raise HTTPException(400, "Amount must be a number.")
+        if parsed_amount < 0:
+            raise HTTPException(400, "Amount can't be negative.")
+
+    org_id, user_id = queries.get_default_org_user(conn)
+    queries.upsert_opportunity(
+        conn, org_id, user_id, school_id, buying_entity, stage,
+        parsed_amount, notes.strip() or None,
+    )
+    # A close is a real, historically-meaningful event worth its own timeline entry,
+    # same reasoning as the Today dismiss buttons (see DISMISS_ACTION_TYPE above).
+    action_type = OPPORTUNITY_ACTION_TYPE.get(stage)
+    if action_type:
+        close_note = f"Marked {queries.STAGE_LABELS[stage]}"
+        if parsed_amount is not None:
+            close_note += f" (${parsed_amount:,.2f})"
+        queries.log_action(
+            conn, org_id, user_id, school_id, None, buying_entity,
+            None, None, close_note, action_type=action_type,
+        )
+    conn.commit()
+
+    school = {
+        "id": school_id,
+        "opportunities_by_entity": queries.get_opportunities_by_entity(conn, school_id),
+    }
+    activity_groups = queries.get_activity_grouped(conn, school_id)
+    touched = {e for e, _ in activity_groups} | set(school["opportunities_by_entity"])
+    school["pipeline_entities"] = [e for e in queries.BUYING_ENTITY_ORDER if e in touched]
+    return templates.TemplateResponse(
+        request, "_pipeline_response.html",
+        {"school": school, "activity_groups": activity_groups},
+    )
+
+
+@app.get("/pipeline", response_class=HTMLResponse)
+def pipeline(request: Request, conn=Depends(get_conn)):
+    opportunities = queries.list_open_opportunities(conn)
+    won_by_segment, won_totals = queries.get_won_summary(conn)
+    dials_7d = queries.get_dial_report(conn, date.today() - timedelta(days=7))
+    return templates.TemplateResponse(
+        request, "pipeline.html",
+        {
+            "opportunities": opportunities,
+            "won_by_segment": won_by_segment,
+            "won_totals": won_totals,
+            "dials_7d": dials_7d,
+        },
     )
 
 

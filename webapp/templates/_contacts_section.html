@@ -64,7 +64,7 @@
                   </form>
                 </details>
               {% endif %}
-              {{ conf_badge(m.email_confidence) }}
+              {{ conf_badge(m.email_source, m.email_confidence, m.last_verified_method) }}
             </div>
             <div class="muted small">
               {% if m.last_verified_at %}

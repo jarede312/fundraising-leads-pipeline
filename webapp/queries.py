@@ -55,6 +55,41 @@ SCORE_METHODOLOGY = (
     "periodically as new data comes in - see the version tag for which run produced it."
 )
 
+# Cutoffs taken from the actual score distribution measured across the live ND scores
+# (see feedback/2026-09-22_beta_feedback_simulated_rep.md §6): p10 ~4.6, p90 ~7.3, with
+# 63% of schools compressed between 5.0-6.9. Two decimal places on a number that
+# discriminates almost nothing in the middle is false precision that invites arguing
+# about the difference between a 6.1 and a 5.4, which isn't real. A three-band tier
+# communicates exactly what the number can actually tell a rep: "call this first",
+# "call this eventually", "call this last" - and no more than that.
+SCORE_TIERS = [(7.3, "Hot", "tier-hot"), (4.6, "Warm", "tier-warm"), (0, "Cool", "tier-cool")]
+
+
+def score_tier(score):
+    """(label, css class) for a raw 0-10 score, or None if the school isn't scored yet."""
+    if score is None:
+        return None
+    for threshold, label, cls in SCORE_TIERS:
+        if score >= threshold:
+            return label, cls
+    return SCORE_TIERS[-1][1], SCORE_TIERS[-1][2]
+
+
+STAGE_LABELS = {
+    "interested": "Interested", "proposal_out": "Proposal Out",
+    "closed_won": "Won", "closed_lost": "Lost",
+}
+STAGE_ORDER = ["interested", "proposal_out", "closed_won", "closed_lost"]
+# What a rep can advance an opportunity to *from* a given implicit/explicit stage.
+# Not enforced server-side (a rep can jump straight to Won/Lost on a fast sale - see
+# upsert_opportunity), just what the UI offers as the obvious next step.
+STAGE_NEXT = {
+    None: ["interested"],
+    "interested": ["proposal_out", "closed_won", "closed_lost"],
+    "proposal_out": ["closed_won", "closed_lost"],
+    "closed_won": [], "closed_lost": ["interested"],
+}
+
 PTO_BOOSTER_ROLES = (
     "pto_president", "pto_fundraising_chair", "pto_treasurer", "booster_president",
 )
@@ -378,7 +413,9 @@ def list_schools(conn, filters: dict, sort: str, sort_dir: str, page: int, page_
             sc.score, sc.rationale,
             la.last_activity_at,
             bc.first_name AS contact_first_name, bc.last_name AS contact_last_name,
-            bc.role AS contact_role, bc.email_confidence AS contact_email_confidence
+            bc.role AS contact_role, bc.email_confidence AS contact_email_confidence,
+            bc.email_source AS contact_email_source,
+            bc.last_verified_method AS contact_last_verified_method
         FROM schools s
         LEFT JOIN districts d ON d.id = s.district_id
         LEFT JOIN LATERAL (
@@ -389,7 +426,9 @@ def list_schools(conn, filters: dict, sort: str, sort_dir: str, page: int, page_
             SELECT max(occurred_at) AS last_activity_at FROM rep_actions WHERE school_id = s.id
         ) la ON true
         LEFT JOIN LATERAL (
-            SELECT first_name, last_name, role, email_confidence FROM contacts
+            SELECT first_name, last_name, role, email_confidence, email_source,
+                   last_verified_method
+            FROM contacts
             WHERE school_id = s.id
             ORDER BY CASE role {_ROLE_PRIORITY_SQL} ELSE 99 END, {_EMAIL_CONF_SQL}
             LIMIT 1
@@ -524,9 +563,15 @@ def get_school_detail(conn, school_id: int):
 
     school["buying_windows"] = get_buying_windows(conn, school_id)
     school["activity_groups"] = get_activity_grouped(conn, school_id)
+    school["opportunities_by_entity"] = get_opportunities_by_entity(conn, school_id)
     school["default_buying_entity"] = get_default_buying_entity(
         conn, school_id, school["contacts"]
     )
+    # Entities worth showing a Pipeline row for: anything ever logged against, or
+    # already tracked as an opportunity - same "don't show a relationship that's never
+    # existed" rule Activity's own grouping already follows.
+    touched_entities = {e for e, _ in school["activity_groups"]} | set(school["opportunities_by_entity"])
+    school["pipeline_entities"] = [e for e in BUYING_ENTITY_ORDER if e in touched_entities]
 
     return school
 
@@ -635,22 +680,29 @@ def get_default_org_user(conn):
 
 
 def log_action(conn, org_id, user_id, school_id, contact_id, buying_entity, channel, outcome, notes,
-               action_type="contacted"):
+               action_type="contacted", occurred_at=None):
     """Does not commit. Both callers pair this with a second write (a follow-up, a
     dismissal) and must land both or neither - committing here is what let a rejected
     follow-up date leave the attempt logged with no follow-up attached, so the rep saw
-    no change on screen and logged the same call twice."""
+    no change on screen and logged the same call twice.
+
+    occurred_at defaults to now() rather than relying on the column default, so a
+    back-dated call (logged that night, from the car that afternoon) can be timestamped
+    when it actually happened instead of when the rep got around to typing it in - see
+    feedback/2026-09-22_beta_feedback_simulated_rep.md §4.5."""
     with conn.cursor() as cur:
         cur.execute(
             """
             INSERT INTO rep_actions
-                (org_id, user_id, school_id, contact_id, action_type, channel, outcome, buying_entity, notes)
+                (org_id, user_id, school_id, contact_id, action_type, channel, outcome,
+                 buying_entity, notes, occurred_at)
             VALUES (%(org_id)s, %(user_id)s, %(school_id)s, %(contact_id)s,
-                    %(action_type)s, %(channel)s, %(outcome)s, %(buying_entity)s, %(notes)s)
+                    %(action_type)s, %(channel)s, %(outcome)s, %(buying_entity)s, %(notes)s,
+                    coalesce(%(occurred_at)s, now()))
             """,
             dict(org_id=org_id, user_id=user_id, school_id=school_id, contact_id=contact_id,
                  action_type=action_type, channel=channel, outcome=outcome,
-                 buying_entity=buying_entity, notes=notes),
+                 buying_entity=buying_entity, notes=notes, occurred_at=occurred_at),
         )
 
 
@@ -841,6 +893,23 @@ def set_manual_follow_up(conn, school_id: int, buying_entity: str, due_date, rea
             )
 
 
+def delete_action(conn, action_id: int, school_id: int) -> int:
+    """Removes a mis-logged entry outright, rather than just letting a rep correct its
+    outcome/notes. A wrong entry isn't just clutter - it counts as a real contact
+    attempt to the cadence generator (see ingest/phase8_follow_ups.py), so a typo can
+    silently suppress a school from Today for up to 10 days. Cadence and 'last activity'
+    are both computed live from rep_actions (max(occurred_at)), so removing the row is
+    enough on its own - nothing else needs to be repaired to un-suppress the school."""
+    with conn.cursor() as cur:
+        cur.execute(
+            "DELETE FROM rep_actions WHERE id = %s AND school_id = %s",
+            (action_id, school_id),
+        )
+        n = cur.rowcount
+    conn.commit()
+    return n
+
+
 def update_action_notes(conn, action_id: int, school_id: int, notes: str | None) -> int:
     with conn.cursor() as cur:
         cur.execute(
@@ -869,3 +938,144 @@ def update_buying_window(conn, window_id: int, season, start_month, start_day,
         row = cur.fetchone()
     conn.commit()
     return row["school_id"] if row else None   # None = no such window; caller 404s
+
+
+# =============================================================================
+# Pipeline (§9 items 1/2): "record a sale" + a real opportunity, not just a call log.
+# =============================================================================
+
+def get_opportunities_by_entity(conn, school_id: int) -> dict:
+    """One row per buying_entity that has ever had an opportunity at this school - the
+    currently open one if there is one, else the most recently closed. DISTINCT ON's
+    ORDER BY does the picking: '(stage not closed) DESC' puts an open row first when
+    one exists, ties broken by most recently touched."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT ON (buying_entity) *
+            FROM opportunities
+            WHERE school_id = %(id)s
+            ORDER BY buying_entity, (stage NOT IN ('closed_won','closed_lost')) DESC, updated_at DESC
+            """,
+            {"id": school_id},
+        )
+        return {r["buying_entity"]: r for r in cur.fetchall()}
+
+
+def upsert_opportunity(conn, org_id, user_id, school_id: int, buying_entity: str,
+                        stage: str, amount, notes: str | None) -> int:
+    """Advances the one open opportunity for (school, entity) to `stage`, or starts a
+    new one if none is currently open - a rep can jump straight to Won/Lost without
+    ever passing through Interested/Proposal Out, for a fast sale. amount/notes only
+    overwrite what's stored when actually provided (coalesce), so marking Lost doesn't
+    blank out an amount entered when the proposal went out.
+
+    Does not commit: the caller pairs this with a matching rep_action on a close (see
+    /schools/{id}/opportunities in main.py), same reason log_action doesn't commit."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE opportunities
+            SET stage = %(stage)s,
+                amount = coalesce(%(amount)s, amount),
+                notes = coalesce(%(notes)s, notes),
+                updated_at = now(),
+                closed_at = CASE WHEN %(stage)s IN ('closed_won','closed_lost')
+                                 THEN now() ELSE closed_at END
+            WHERE school_id = %(school_id)s AND buying_entity = %(buying_entity)s
+              AND stage NOT IN ('closed_won','closed_lost')
+            RETURNING id
+            """,
+            dict(stage=stage, amount=amount, notes=notes,
+                 school_id=school_id, buying_entity=buying_entity),
+        )
+        row = cur.fetchone()
+        if row is not None:
+            return row["id"]
+
+        cur.execute(
+            """
+            INSERT INTO opportunities
+                (org_id, school_id, buying_entity, stage, amount, notes, created_by, closed_at)
+            VALUES (%(org_id)s, %(school_id)s, %(buying_entity)s, %(stage)s, %(amount)s, %(notes)s,
+                    %(user_id)s,
+                    CASE WHEN %(stage)s IN ('closed_won','closed_lost') THEN now() END)
+            RETURNING id
+            """,
+            dict(org_id=org_id, school_id=school_id, buying_entity=buying_entity,
+                 stage=stage, amount=amount, notes=notes, user_id=user_id),
+        )
+        return cur.fetchone()["id"]
+
+
+def list_open_opportunities(conn):
+    """Every open (not yet won/lost) opportunity, territory-wide - the pipeline view
+    itself (§9 item 2: 'no pipeline view... four stages would do it'). Ordered
+    furthest-along-first: a proposal sitting out is more urgent to close than one still
+    at Interested."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT o.id, o.school_id, s.name AS school_name, s.segment,
+                   o.buying_entity, o.stage, o.amount, o.updated_at
+            FROM opportunities o
+            JOIN schools s ON s.id = o.school_id
+            WHERE o.stage NOT IN ('closed_won', 'closed_lost')
+            ORDER BY CASE o.stage WHEN 'proposal_out' THEN 0 ELSE 1 END, o.updated_at DESC
+            """
+        )
+        return cur.fetchall()
+
+
+def get_won_summary(conn):
+    """All-time won/lost totals by segment - deal cycles here run months, so a rolling
+    7/30-day window would show mostly zeros in a beta. This is the 'did any of this
+    work' answer the rep said the tool couldn't give (§9 item 1)."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.segment,
+                   count(*) FILTER (WHERE o.stage = 'closed_won') AS won_count,
+                   coalesce(sum(o.amount) FILTER (WHERE o.stage = 'closed_won'), 0) AS won_amount,
+                   count(*) FILTER (WHERE o.stage = 'closed_lost') AS lost_count
+            FROM opportunities o
+            JOIN schools s ON s.id = o.school_id
+            GROUP BY s.segment
+            HAVING count(*) FILTER (WHERE o.stage IN ('closed_won','closed_lost')) > 0
+            ORDER BY won_amount DESC
+            """
+        )
+        rows = cur.fetchall()
+        cur.execute(
+            """
+            SELECT count(*) FILTER (WHERE stage = 'closed_won') AS won_count,
+                   coalesce(sum(amount) FILTER (WHERE stage = 'closed_won'), 0) AS won_amount,
+                   count(*) FILTER (WHERE stage = 'closed_lost') AS lost_count
+            FROM opportunities
+            """
+        )
+        totals = cur.fetchone()
+    return rows, totals
+
+
+# =============================================================================
+# Basic activity reporting (§10: "you can't manage what you can't see").
+# =============================================================================
+
+def get_dial_report(conn, since: date):
+    """Attempt volume and phone contact rate since `since` - the two numbers the rep
+    said were simply unanswerable: how many dials, and is anyone picking up."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT
+                count(*) AS attempts,
+                count(*) FILTER (WHERE channel = 'phone') AS calls,
+                count(*) FILTER (WHERE channel = 'phone' AND outcome = 'spoke') AS calls_connected,
+                count(DISTINCT school_id) AS schools_touched
+            FROM rep_actions
+            WHERE action_type = 'contacted' AND occurred_at >= %(since)s
+            """,
+            {"since": since},
+        )
+        return cur.fetchone()

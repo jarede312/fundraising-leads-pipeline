@@ -162,6 +162,12 @@ a:hover { text-decoration: underline; }
 }
 .inline-add-form button:hover { background: #1f4c8f; }
 
+.backdate-add { display: block; margin: 4px 0; }
+.backdate-input {
+  display: block; margin-top: 4px; font-size: 12.5px; padding: 4px 7px;
+  border: 1px solid var(--border); border-radius: 4px;
+}
+
 /* ---------- Phase 2: logging ---------- */
 .log-card { background: var(--accent-bg); border-color: #c7d9f2; }
 .window-inline { margin-top: 10px; display: flex; align-items: center; gap: 8px; }
@@ -233,6 +239,12 @@ a:hover { text-decoration: underline; }
   margin-top: 6px; padding: 6px 10px; background: var(--amber-bg); color: var(--ink);
   border-left: 3px solid var(--amber); border-radius: 0 4px 4px 0; font-style: normal;
 }
+.activity-delete {
+  margin-left: auto; font-size: 11px; color: var(--ink-muted); background: none;
+  border: none; cursor: pointer; padding: 2px 4px;
+}
+.activity-delete:hover { color: var(--red); text-decoration: underline; }
+
 .refine-chips { margin-top: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .chip {
   font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--border);
@@ -376,3 +388,52 @@ code {
 .add-contact-form select {
   padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12.5px;
 }
+
+/* ---- score tiers (webapp/queries.py score_tier) ----
+   The tier label is the primary read; the raw number is demoted to a caption -
+   two decimals on a score that barely discriminates in the middle of its range
+   was inviting an argument over a 6.1 vs a 5.4 that isn't a real difference. */
+.tier-label { font-size: 32px; font-weight: 800; line-height: 1; }
+.tier-hot { color: var(--red); }
+.tier-warm { color: var(--amber); }
+.tier-cool { color: var(--ink-muted); }
+.score-raw { font-size: 12px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.priority-tier { font-weight: 700; font-size: 12.5px; margin-left: auto; }
+.priority-tier.tier-hot { color: var(--red); }
+.priority-tier.tier-warm { color: var(--amber); }
+.priority-tier.tier-cool { color: var(--ink-muted); }
+.tier-chip {
+  font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 8px;
+  margin-left: 6px; vertical-align: middle;
+}
+.tier-chip.tier-hot { background: var(--red-bg); color: var(--red); }
+.tier-chip.tier-warm { background: var(--amber-bg); color: var(--amber); }
+.tier-chip.tier-cool { background: var(--gray-bg); color: var(--ink-muted); }
+
+/* ---- pipeline (webapp/templates/_pipeline_section.html, pipeline.html) ---- */
+.pipeline-row {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 8px 0; border-bottom: 1px dashed var(--border);
+}
+.pipeline-row:last-child { border-bottom: none; }
+.pipeline-entity { font-weight: 700; min-width: 130px; }
+.pipeline-stage {
+  font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 10px;
+  background: var(--gray-bg); color: var(--ink-muted); white-space: nowrap;
+}
+.pipeline-stage.stage-interested { background: var(--accent-bg); color: var(--accent); }
+.pipeline-stage.stage-proposal_out { background: var(--amber-bg); color: var(--amber); }
+.pipeline-stage.stage-closed_won { background: var(--green-bg); color: var(--green); }
+.pipeline-stage.stage-closed_lost { background: var(--red-bg); color: var(--red); }
+.pipeline-amount { margin-left: 6px; font-weight: 700; }
+.pipeline-actions { display: flex; gap: 6px; margin-left: auto; align-items: center; flex-wrap: wrap; }
+.pipeline-btn {
+  font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 4px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink); cursor: pointer;
+}
+.pipeline-btn:hover { border-color: var(--accent); color: var(--accent); }
+.pipeline-btn-closed_lost:hover { border-color: var(--red); color: var(--red); }
+
+.report-stats { display: flex; gap: 28px; flex-wrap: wrap; margin-bottom: 4px; }
+.report-stat-num { font-size: 26px; font-weight: 800; color: var(--ink); line-height: 1; }
+.report-stat-label { font-size: 12px; color: var(--ink-muted); margin-top: 3px; }

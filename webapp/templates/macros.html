@@ -1,16 +1,22 @@
-{% macro conf_badge(confidence) -%}
-{% set cls = {
-    'verified': 'conf-verified', 'high': 'conf-verified',
-    'medium': 'conf-medium',
-    'low': 'conf-low', 'unknown': 'conf-low',
-    'invalid': 'conf-invalid'
-}.get(confidence, 'conf-low') %}
-{% set label = {
-    'verified': 'Verified', 'high': 'High confidence',
-    'medium': 'Derived — medium confidence',
-    'low': 'Low confidence', 'unknown': 'Unverified',
-    'invalid': 'Invalid — do not use'
-}.get(confidence, 'Unverified') %}
+{% macro conf_badge(email_source, email_confidence, last_verified_method) -%}
+{#- Labeled by where the address actually came from, not by the internal
+   email_confidence tier - a state-directory address and a name+pattern guess
+   used to render with their tiers backwards (guesses in green, directory
+   pulls in amber), which trained reps to avoid the best data in the system.
+   See feedback/2026-09-22_beta_feedback_simulated_rep.md §5. -#}
+{%- if email_confidence == 'invalid' -%}
+  {% set cls, label = 'conf-invalid', 'Invalid — do not use' %}
+{%- elif email_source == 'derived' -%}
+  {% set cls, label = 'conf-medium', 'Pattern guess — unverified' %}
+{%- elif email_source == 'found' and last_verified_method == 'state_directory' -%}
+  {% set cls, label = 'conf-verified', 'State directory' %}
+{%- elif email_source == 'found' -%}
+  {% set cls, label = 'conf-verified', 'Found on school site' %}
+{%- elif email_source == 'provided' -%}
+  {% set cls, label = 'conf-verified', 'Added by you' %}
+{%- else -%}
+  {% set cls, label = 'conf-low', 'No email on file' %}
+{%- endif %}
 <span class="conf-badge {{ cls }}" title="{{ label }}"><span class="conf-dot"></span>{{ label }}</span>
 {%- endmacro %}
 
@@ -49,11 +55,15 @@
     </label>
     <input type="date" id="followupdate-{{ key_prefix }}" name="follow_up_date" class="followup-date" title="Leave blank to use the default follow-up interval">
   </div>
+  <details class="inline-add backdate-add">
+    <summary class="add-link small">Logged just now - back-date?</summary>
+    <input type="datetime-local" id="occurredat-{{ key_prefix }}" name="occurred_at" class="backdate-input">
+  </details>
   <div class="log-btn-row">
     {% for label, channel, outcome, key in CHANNEL_BUTTONS %}
     <button type="button" class="log-btn" data-shortcut="{{ key }}" data-scope="{{ key_prefix }}"
       hx-post="/schools/{{ school_id }}/actions"
-      hx-include="#entity-{{ key_prefix }}, #notes-{{ key_prefix }}, #followup-{{ key_prefix }}, #followupdate-{{ key_prefix }}"
+      hx-include="#entity-{{ key_prefix }}, #notes-{{ key_prefix }}, #followup-{{ key_prefix }}, #followupdate-{{ key_prefix }}, #occurredat-{{ key_prefix }}"
       hx-vals='{"channel": "{{ channel }}"{% if outcome %}, "outcome": "{{ outcome }}"{% endif %}{% if contact_id %}, "contact_id": {{ contact_id }}{% endif %}}'
       hx-target="#activity-timeline" hx-swap="innerHTML"
       hx-indicator="this"

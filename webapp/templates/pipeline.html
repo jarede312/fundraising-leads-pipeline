@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Pipeline — Prospect Engine{% endblock %}
+{% block content %}
+<div class="page">
+  <header class="page-header">
+    <h1>Pipeline</h1>
+    <div class="page-sub">Open deals and basic call activity - the "did any of this work" view.</div>
+  </header>
+
+  <section class="card">
+    <h2>Last 7 days</h2>
+    <div class="report-stats">
+      <div class="report-stat">
+        <div class="report-stat-num">{{ dials_7d.calls }}</div>
+        <div class="report-stat-label">Calls</div>
+      </div>
+      <div class="report-stat">
+        <div class="report-stat-num">
+          {% if dials_7d.calls %}{{ (100 * dials_7d.calls_connected / dials_7d.calls)|round|int }}%{% else %}—{% endif %}
+        </div>
+        <div class="report-stat-label">Contact rate ({{ dials_7d.calls_connected }} of {{ dials_7d.calls }} calls)</div>
+      </div>
+      <div class="report-stat">
+        <div class="report-stat-num">{{ dials_7d.attempts }}</div>
+        <div class="report-stat-label">Total attempts (all channels)</div>
+      </div>
+      <div class="report-stat">
+        <div class="report-stat-num">{{ dials_7d.schools_touched }}</div>
+        <div class="report-stat-label">Schools touched</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Won / lost, all-time</h2>
+    {% if won_totals.won_count or won_totals.lost_count %}
+    <div class="report-stats">
+      <div class="report-stat">
+        <div class="report-stat-num">{{ won_totals.won_count }}</div>
+        <div class="report-stat-label">Won</div>
+      </div>
+      <div class="report-stat">
+        <div class="report-stat-num">${{ '{:,.0f}'.format(won_totals.won_amount) }}</div>
+        <div class="report-stat-label">Won revenue</div>
+      </div>
+      <div class="report-stat">
+        <div class="report-stat-num">{{ won_totals.lost_count }}</div>
+        <div class="report-stat-label">Lost</div>
+      </div>
+    </div>
+    {% if won_by_segment %}
+    <table class="school-table">
+      <thead><tr><th>Segment</th><th>Won</th><th>Won revenue</th><th>Lost</th></tr></thead>
+      <tbody>
+        {% for row in won_by_segment %}
+        <tr>
+          <td>{{ row.segment|capitalize if row.segment else 'Unknown' }}</td>
+          <td class="num">{{ row.won_count }}</td>
+          <td class="num">${{ '{:,.0f}'.format(row.won_amount) }}</td>
+          <td class="num">{{ row.lost_count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    {% else %}
+    <p class="empty-hint">Nothing marked Won or Lost yet. Mark a deal from a school's Pipeline card once you know the outcome.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Open deals</h2>
+    {% if opportunities %}
+    <table class="school-table">
+      <thead><tr><th>School</th><th>Segment</th><th>Entity</th><th>Stage</th><th>Amount</th><th>Updated</th></tr></thead>
+      <tbody>
+        {% for o in opportunities %}
+        <tr>
+          <td><a href="/schools/{{ o.school_id }}">{{ o.school_name|title }}</a></td>
+          <td>{{ o.segment|capitalize if o.segment else '—' }}</td>
+          <td>{{ BUYING_ENTITY_LABELS.get(o.buying_entity, o.buying_entity) }}</td>
+          <td><span class="pipeline-stage stage-{{ o.stage }}">{{ STAGE_LABELS.get(o.stage, o.stage) }}</span></td>
+          <td class="num">{% if o.amount %}${{ '{:,.0f}'.format(o.amount) }}{% else %}—{% endif %}</td>
+          <td>{{ o.updated_at.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty-hint">No open deals yet. Mark a contact Interested from a school's Pipeline card to start one.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

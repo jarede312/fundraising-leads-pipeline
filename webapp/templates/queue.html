@@ -34,7 +34,9 @@
     </div>
     <div class="score-box">
       {% if school.score_row %}
-      <div class="score-big">{{ '%.2f'|format(school.score_row.score) }}</div>
+      {% set tier_label, tier_cls = school.score_row.score|score_tier %}
+      <div class="tier-label {{ tier_cls }}" title="{{ SCORE_METHODOLOGY }}">{{ tier_label }}</div>
+      <div class="score-raw">{{ '%.2f'|format(school.score_row.score) }} raw</div>
       <p class="rationale">{{ school.score_row.rationale }}</p>
       {% else %}
       <div class="empty-hint">Not yet scored</div>

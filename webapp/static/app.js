@@ -56,11 +56,30 @@
     });
   }
 
+  // Back-dating a logged action (§4.5): the datetime-local field starts empty (blank
+  // means "log it as now" server-side) but once a rep opens the picker to correct it,
+  // starting from the current moment and nudging it back is faster than typing a full
+  // date from scratch.
+  document.body.addEventListener("toggle", function (e) {
+    if (!(e.target.classList && e.target.classList.contains("backdate-add") && e.target.open)) return;
+    var input = e.target.querySelector(".backdate-input");
+    if (input && !input.value) {
+      var d = new Date();
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      input.value = d.toISOString().slice(0, 16);
+    }
+  }, true);
+
+  // A back-dated field left open with a chosen value should reset to blank
+  // ("now") after a successful log, same as the notes field below - otherwise
+  // the next call at this contact silently inherits the previous one's timestamp.
   document.body.addEventListener("htmx:afterRequest", function (e) {
     var path = e.detail.pathInfo && e.detail.pathInfo.requestPath;
     if (!(e.detail.successful && path && /\/actions$/.test(path))) return;
 
     document.querySelectorAll(".notes-input").forEach(function (i) { i.value = ""; });
+    document.querySelectorAll(".backdate-add").forEach(function (d) { d.open = false; });
+    document.querySelectorAll(".backdate-input").forEach(function (i) { i.value = ""; });
 
     // the click that fired this request gets a visible "logged" state - otherwise
     // the only feedback is the timeline changing somewhere else on the page, which

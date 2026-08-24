@@ -36,7 +36,9 @@
     </div>
     <div class="score-box">
       {% if school.score_row %}
-      <div class="score-big" title="{{ SCORE_METHODOLOGY }}">{{ '%.2f'|format(school.score_row.score) }}</div>
+      {% set tier_label, tier_cls = school.score_row.score|score_tier %}
+      <div class="tier-label {{ tier_cls }}" title="{{ SCORE_METHODOLOGY }}">{{ tier_label }}</div>
+      <div class="score-raw">{{ '%.2f'|format(school.score_row.score) }} raw</div>
       <div class="score-version">{{ school.score_row.score_version }} &middot; <span class="info-tip" title="{{ SCORE_METHODOLOGY }}">what's this?</span></div>
       <p class="rationale">{{ school.score_row.rationale }}</p>
       {% else %}
@@ -83,7 +85,7 @@
 
   <section class="card">
     <h2>Signals</h2>
-    <p class="muted small section-hint">Automatic alerts when something changes that's worth a call - a new principal, a new music teacher, or PTO officer turnover. These are detected from source data during data ingest, not something you log by hand.</p>
+    <p class="muted small section-hint">Alerts for a change worth a call - a new principal, a new music teacher, or PTO officer turnover. These come from re-checking source data, not something you log by hand - but that re-check isn't on a running schedule yet, so don't expect this list to fill in on its own during normal day-to-day use. An empty list means no re-check has found a change, not that nothing has changed.</p>
     {% if school.signals %}
       <ul class="timeline">
         {% for sig in school.signals %}
@@ -93,9 +95,11 @@
         {% endfor %}
       </ul>
     {% else %}
-      <p class="empty-hint">No signals detected yet.</p>
+      <p class="empty-hint">No signals detected yet - this feature isn't on a running schedule yet, so this list won't fill in by itself. See the Guide.</p>
     {% endif %}
   </section>
+
+  {% include "_pipeline_section.html" %}
 
   {% include "_activity_section.html" %}
 </div>

@@ -19,6 +19,7 @@
       <li><a href="#schools">All Schools (the full list)</a></li>
       <li><a href="#queue">Queue mode</a></li>
       <li><a href="#detail">A school's page</a></li>
+      <li><a href="#pipeline">Pipeline</a></li>
       <li><a href="#shortcuts">Keyboard shortcuts</a></li>
       <li><a href="#glossary">Glossary</a></li>
     </ul>
@@ -28,7 +29,7 @@
     <h2>Today (the home screen)</h2>
     <p>This is what loads at <code>/</code>. It's a short, bounded list - never more than 15 items at a time (30 with "Show more") - of the schools most worth calling today. Every item has a reason: either a signal fired (new principal, new music teacher, PTO turnover), or it's due for a follow-up - never contacted at all, or enough time has passed since the last attempt (10 days normally, 5 once a couple of attempts have gone unanswered), or a rep set a specific follow-up date by hand while logging an attempt. When nothing else applies, items are ranked by score, so an empty queue defaults to "call your best-scored uncalled schools first."</p>
     <p>There's deliberately no "you have 47 overdue" counter. The list recomputes from scratch each day rather than piling up a backlog number that would make the tool feel like it's nagging.</p>
-    <p>Each row has a <strong>dismiss</strong> control: <em>Done for now</em> or <em>Not interested</em> clear it permanently (until a new trigger fires), <em>Snooze 1/2 weeks</em> brings it back later. Dismissing removes it from today's list immediately.</p>
+    <p>Each row has a <strong>dismiss</strong> control. <em>Not interested</em> clears it permanently - it also stops future automatic follow-ups for that school/entity until you log a new attempt yourself. <em>Done for now</em> clears it for now, but it is not permanent: it reappears on the normal cadence timer, currently about 10 days after your last real connection (see Glossary: Follow-up). <em>Snooze 1/2 weeks</em> brings it back on a date you choose instead. Dismissing removes it from today's list immediately either way.</p>
   </section>
 
   <section class="card" id="schools">
@@ -46,12 +47,12 @@
     <h2>A school's page</h2>
 
     <h3>Score</h3>
-    <p>The big number top-right is a 0-10 composite - hover it (or the "what's this?" link) for the exact weighting. It updates when the scoring job is re-run, not live.</p>
+    <p>Shown as a tier - <strong>Hot</strong>, <strong>Warm</strong>, or <strong>Cool</strong> - rather than the raw 0-10 number, because the number itself barely discriminates in the middle of its range: most schools land within about two points of each other, so two decimal places invited treating a 6.1 and a 5.4 as meaningfully different when they aren't. The raw score is still shown smaller underneath, and hovering the tier (or the "what's this?" link) gives the exact weighting. Updates when the scoring job is re-run, not live.</p>
 
     <h3>Contacts</h3>
     <p>Every known person at the school, grouped by role, plus a standing <strong>General / Front Office</strong> entry for when you're calling the main line rather than a specific person. Two people at different sources sometimes get scraped as separate records - when that happens for the same name, they're merged into one card but every distinct email/phone found for them is kept, since sources occasionally disagree and the disagreement itself is worth seeing.</p>
     <p>If a contact is missing an email or phone, a <strong>+ Add email</strong> / <strong>+ Add phone</strong> link appears - use it to fill in what you find by hand. Known emails and phone numbers are clickable (<code>mailto:</code> / <code>tel:</code>). A school with nobody on file yet - or a PTO/booster officer you learned about by phone rather than found in any source - can be added directly with <strong>+ Add a contact</strong> at the bottom of the section.</p>
-    <p>Each contact card has its own logging controls: optionally type a note, then click what happened - Called, Left message, Emailed, Video call, or Mailed. Which <strong>buying entity</strong> (PTO, Band Boosters, School Admin, etc.) the attempt counts toward is inferred automatically from that person's role - a Band Booster contact logs to Band Boosters, a Principal logs to School Admin - so there's nothing to pick. A school can have several live relationships at once, and they stay tracked separately. The General / Front Office card is the exception: since it isn't tied to a specific person's role, it keeps an entity picker so you can say who the call was actually about. It's also the card the keyboard shortcuts below act on - see Keyboard shortcuts.</p>
+    <p>Each contact card has its own logging controls: optionally type a note, then click what happened - Called, Left message, Emailed, Video call, or Mailed. Logging always stamps the current time unless you open <strong>"Logged just now - back-date?"</strong> first and pick when it actually happened - useful for calls you make from the car or log that night. Which <strong>buying entity</strong> (PTO, Band Boosters, School Admin, etc.) the attempt counts toward is inferred automatically from that person's role - a Band Booster contact logs to Band Boosters, a Principal logs to School Admin - so there's nothing to pick. A school can have several live relationships at once, and they stay tracked separately. The General / Front Office card is the exception: since it isn't tied to a specific person's role, it keeps an entity picker so you can say who the call was actually about. It's also the card the keyboard shortcuts below act on - see Keyboard shortcuts.</p>
 
     <h3>Decision Window</h3>
     <p>The date range each buying entity typically makes its purchasing decision. Click "edit" on a window to correct the dates, season, or source (stated by the school vs. observed from past behavior) if what's on file is wrong.</p>
@@ -60,10 +61,16 @@
     <p>Where a school's PTO/booster organization has been matched to a real IRS nonprofit filing, its financials show here - gross receipts and revenue are a rough proxy for fundraising capacity. "Unconfirmed match" means the link is a probable match, not a certain one.</p>
 
     <h3>Signals</h3>
-    <p>Automatically detected changes worth a call - a new principal, a new music teacher, PTO officer turnover. These come from source data during ingest; you never log one by hand. An empty list just means nothing's been detected yet, not that nothing's been checked.</p>
+    <p>Detected changes worth a call - a new principal, a new music teacher, PTO officer turnover. These come from re-checking source data; you never log one by hand. <strong>As of this writing, that re-check does not run on a regular schedule</strong> - the detection logic exists, but nothing currently triggers it periodically, so in normal use this section will typically stay empty even where a real change happened. Treat an empty list as "not yet checked," not "nothing to report."</p>
 
     <h3>Activity</h3>
     <p>Every logged attempt, grouped by buying entity, newest first. If you clicked the wrong outcome, use the <strong>"Different result?"</strong> chips under an entry to correct it without logging a duplicate. If an entry has no note, a <strong>+ Add note</strong> link lets you add one after the fact - handy since you often only know what's worth writing down after the call ends.</p>
+  </section>
+
+  <section class="card" id="pipeline">
+    <h2>Pipeline</h2>
+    <p>A school's page has a <strong>Pipeline</strong> card, one row per buying entity you've ever actually contacted or tracked as a deal. A relationship starts untracked - just calls in the Activity log - until you judge it worth calling a real opportunity, at which point <strong>Interested</strong> starts one. From there it can move to <strong>Proposal Out</strong>, then <strong>Won</strong> (enter the dollar amount) or <strong>Lost</strong>. You can also jump straight to Won or Lost on a fast sale without passing through the earlier stages. A win or loss also drops a matching entry in the Activity timeline, so the two views never disagree about what happened.</p>
+    <p>The top-nav <strong>Pipeline</strong> link is the territory-wide view: every open deal across all schools, plus last-7-days call volume/contact rate and all-time won/lost totals by segment - the answer to "did any of this work?" that used to require nothing but a call log.</p>
   </section>
 
   <section class="card" id="shortcuts">
@@ -93,11 +100,15 @@
       <dt>Buying entity</dt>
       <dd>Which relationship an attempt or follow-up belongs to at a school: School Admin, PTO, PTA, or a specific booster club (Band, Choir, Drama, Athletic). A school can have several live at once - they never share activity history.</dd>
       <dt>Confidence badge</dt>
-      <dd>How much to trust a contact's email: <strong>Verified</strong>/<strong>High confidence</strong> (green), <strong>Derived - medium confidence</strong> (amber, e.g. guessed from a name + known email pattern), <strong>Low confidence</strong>/<strong>Unverified</strong> (gray), <strong>Invalid - do not use</strong> (red, known bad).</dd>
+      <dd>Where a contact's email actually came from, not an abstract trust score: <strong>State directory</strong>/<strong>Found on school site</strong>/<strong>Added by you</strong> (green - a real address someone published or a rep confirmed), <strong>Pattern guess - unverified</strong> (amber - built from a name plus a district's known email pattern, not seen anywhere), <strong>No email on file</strong> (gray), <strong>Invalid - do not use</strong> (red, known bad).</dd>
       <dt>Decision window</dt>
       <dd>The recurring time of year a buying entity typically decides on a fundraiser. Reference info you can correct per school - it does not currently drive Today, since nearly every school still carries the same generic placeholder window.</dd>
       <dt>Signal</dt>
-      <dd>An automatically detected change (new principal, new music teacher, PTO officer turnover) that often means it's a good time to re-engage.</dd>
+      <dd>A detected change (new principal, new music teacher, PTO officer turnover) that often means it's a good time to re-engage. Detection isn't on a running schedule yet - see Signals above.</dd>
+      <dt>Score tier</dt>
+      <dd>Hot / Warm / Cool - the score's headline display. Hot is roughly the top 10% of schools by raw score, Cool the bottom 10%, Warm everything in between. The raw 0-10 number is still shown smaller alongside it.</dd>
+      <dt>Opportunity / pipeline stage</dt>
+      <dd>A tracked deal for one (school, buying entity) pair: Interested &rarr; Proposal Out &rarr; Won/Lost. Untracked relationships (just logged calls, no judgment yet that it's a real deal) don't show up here or on the Pipeline page.</dd>
       <dt>Follow-up</dt>
       <dd>A reminder to reach out again - created automatically (a signal firing, or enough time passing since the last attempt/ever) or by hand (checking "Needs follow-up" while logging an attempt, optionally with your own date). These are what populate the Today screen, each on its due date.</dd>
     </dl>

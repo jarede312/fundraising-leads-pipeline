@@ -34,14 +34,19 @@
       <td>{{ s.district_name|title if s.district_name else '—' }}</td>
       <td>{{ s.segment|capitalize if s.segment else '—' }}</td>
       <td class="num">{{ s.enrollment if s.enrollment is not none else '—' }}</td>
-      <td class="num score-cell">{{ '%.2f'|format(s.score) if s.score is not none else '—' }}</td>
+      <td class="num score-cell">
+        {% if s.score is not none %}
+          {% set tier_label, tier_cls = s.score|score_tier %}
+          {{ '%.2f'|format(s.score) }}<span class="tier-chip {{ tier_cls }}" title="{{ SCORE_METHODOLOGY }}">{{ tier_label }}</span>
+        {% else %}—{% endif %}
+      </td>
       <td>{{ s.last_activity_at.strftime('%Y-%m-%d') if s.last_activity_at else 'Never' }}</td>
       <td>
         {% if s.contact_first_name %}
           <div class="contact-cell">
             <span>{{ s.contact_first_name }} {{ s.contact_last_name }}</span>
             <span class="role-tag">{{ ROLE_LABELS.get(s.contact_role, s.contact_role) }}</span>
-            {{ conf_badge(s.contact_email_confidence) }}
+            {{ conf_badge(s.contact_email_source, s.contact_email_confidence, s.contact_last_verified_method) }}
           </div>
         {% else %}
           <span class="empty-hint">No contact on file</span>

@@ -41,7 +41,7 @@
           {{ '%.2f'|format(s.score) }}<span class="tier-chip {{ tier_cls }}" title="{{ SCORE_METHODOLOGY }}">{{ tier_label }}</span>
         {% else %}—{% endif %}
       </td>
-      <td>{{ s.last_activity_at.strftime('%Y-%m-%d') if s.last_activity_at else 'Never' }}</td>
+      <td>{{ s.last_activity_at|central_date if s.last_activity_at else 'Never' }}</td>
       <td>
         {% if s.contact_first_name %}
           <div class="contact-cell">

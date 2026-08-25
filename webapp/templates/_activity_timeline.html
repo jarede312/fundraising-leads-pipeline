@@ -5,7 +5,7 @@
     {% for a in actions %}
     <div class="activity-row">
       <div class="activity-line">
-        <span class="activity-time">{{ a.occurred_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        <span class="activity-time">{{ a.occurred_at|central_dt }}</span>
         {% if a.action_type != 'contacted' %}
           <span class="activity-action-tag">{{ ACTION_TYPE_LABELS.get(a.action_type, a.action_type) }}</span>
         {% else %}

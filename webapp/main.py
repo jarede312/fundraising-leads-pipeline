@@ -4,6 +4,7 @@ import logging
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
 import psycopg
 from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request
@@ -19,6 +20,26 @@ from . import queries
 from .db import get_conn
 
 BASE_DIR = Path(__file__).resolve().parent
+
+CENTRAL_TZ = ZoneInfo("America/Chicago")
+
+
+def central_date(dt: datetime | None) -> str:
+    """Every timestamptz column comes back from psycopg as a UTC-aware datetime;
+    reps are in Central, so anything shown on the site needs this conversion rather
+    than the raw UTC wall-clock value (which can land on the wrong calendar day
+    entirely in the evening Central hours)."""
+    if not dt:
+        return ""
+    return dt.astimezone(CENTRAL_TZ).strftime("%Y-%m-%d")
+
+
+def central_dt(dt: datetime | None) -> str:
+    """Same as central_date but with the time - for activity-log rows where the
+    hour/minute matters, not just the day."""
+    if not dt:
+        return ""
+    return dt.astimezone(CENTRAL_TZ).strftime("%Y-%m-%d %H:%M")
 
 
 def format_phone(raw: str | None) -> str:
@@ -71,6 +92,8 @@ templates.env.globals["STAGE_LABELS"] = queries.STAGE_LABELS
 templates.env.globals["STAGE_NEXT"] = queries.STAGE_NEXT
 templates.env.filters["phone"] = format_phone
 templates.env.filters["score_tier"] = queries.score_tier
+templates.env.filters["central_date"] = central_date
+templates.env.filters["central_dt"] = central_dt
 
 PAGE_SIZE = 50
 
@@ -322,7 +345,7 @@ def export_schools_csv(
             r["segment"] or "", r["enrollment"] if r["enrollment"] is not None else "",
             f"{r['score']:.2f}" if r["score"] is not None else "",
             tier[0] if tier else "",
-            r["last_activity_at"].strftime("%Y-%m-%d") if r["last_activity_at"] else "",
+            central_date(r["last_activity_at"]),
             f"{r['contact_first_name']} {r['contact_last_name']}" if r["contact_first_name"] else "",
             queries.ROLE_LABELS.get(r["contact_role"], r["contact_role"] or ""),
             r["contact_email_confidence"] or "",

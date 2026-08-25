@@ -6,7 +6,7 @@
     <h1>Schools</h1>
     <div class="page-sub" id="schools-count">{{ total }} open school{{ 's' if total != 1 else '' }}</div>
     {% if directory_as_of %}
-    <div class="page-sub muted small">Directory data as of {{ directory_as_of.strftime('%Y-%m-%d') }}</div>
+    <div class="page-sub muted small">Directory data as of {{ directory_as_of|central_date }}</div>
     {% endif %}
   </header>
 

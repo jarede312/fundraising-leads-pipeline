@@ -16,7 +16,7 @@
         {{ STAGE_LABELS.get(opp.stage, opp.stage) }}
         {% if opp.amount %}<span class="pipeline-amount">${{ '{:,.0f}'.format(opp.amount) }}</span>{% endif %}
       </div>
-      <div class="muted small pipeline-date">Since {{ opp.created_at.strftime('%Y-%m-%d') }}</div>
+      <div class="muted small pipeline-date">Since {{ opp.created_at|central_date }}</div>
       <div class="pipeline-actions">
         {% for next_stage in STAGE_NEXT.get(opp.stage, []) %}
           {% if next_stage == 'closed_won' %}

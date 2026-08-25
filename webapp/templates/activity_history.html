@@ -14,7 +14,7 @@
       <tbody>
         {% for r in rows %}
         <tr>
-          <td class="muted small" style="white-space:nowrap;">{{ r.occurred_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td class="muted small" style="white-space:nowrap;">{{ r.occurred_at|central_dt }}</td>
           <td><strong>{{ r.action }}</strong></td>
           <td>{% if r.school_id %}<a href="/schools/{{ r.school_id }}">{{ r.school_name|title if r.school_name else 'School #' ~ r.school_id }}</a>{% else %}—{% endif %}</td>
           <td>{{ r.detail or '—' }}</td>

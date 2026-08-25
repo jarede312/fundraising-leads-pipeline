@@ -68,7 +68,7 @@
       </div>
       <div class="muted small">
         {% if m.last_verified_at %}
-          Verified {{ m.last_verified_at.strftime('%Y-%m-%d') }} via {{ m.last_verified_method or 'unknown method' }}
+          Verified {{ m.last_verified_at|central_date }} via {{ m.last_verified_method or 'unknown method' }}
         {% else %}
           Never verified &middot; source: {{ m.email_source }}
         {% endif %}

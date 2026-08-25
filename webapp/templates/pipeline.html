@@ -89,8 +89,8 @@
           </td>
           <td><span class="pipeline-stage stage-{{ o.stage }}">{{ STAGE_LABELS.get(o.stage, o.stage) }}</span></td>
           <td class="num">{% if o.amount %}${{ '{:,.0f}'.format(o.amount) }}{% else %}—{% endif %}</td>
-          <td>{{ o.created_at.strftime('%Y-%m-%d') }}</td>
-          <td>{{ o.updated_at.strftime('%Y-%m-%d') }}</td>
+          <td>{{ o.created_at|central_date }}</td>
+          <td>{{ o.updated_at|central_date }}</td>
         </tr>
         {% endfor %}
       </tbody>

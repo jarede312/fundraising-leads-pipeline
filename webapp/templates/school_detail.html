@@ -84,7 +84,7 @@
     {% if school.signals %}
       <ul class="timeline">
         {% for sig in school.signals %}
-        <li><span class="muted">{{ sig.detected_at.strftime('%Y-%m-%d') }}</span> — {{ sig.signal_type|replace('_',' ')|capitalize }}
+        <li><span class="muted">{{ sig.detected_at|central_date }}</span> — {{ sig.signal_type|replace('_',' ')|capitalize }}
           {% if sig.notes %}<div class="muted small">{{ sig.notes }}</div>{% endif %}
         </li>
         {% endfor %}
